@@ -1,3 +1,4 @@
+import wordmark from './assets/fsky-wordmark.png'
 import './App.css'
 
 const services = [
@@ -21,16 +22,26 @@ const services = [
 function App() {
   return (
     <>
+      <header id="nav">
+        <img src={wordmark} className="logo" alt="FSKY" />
+        <nav>
+          <a href="#about">FSKYについて</a>
+          <a href="#services">サービス</a>
+          <a href="#contact">お問い合わせ</a>
+        </nav>
+      </header>
+
       <section id="hero">
-        <p className="eyebrow">FSKY</p>
-        <h1>流れる空に乗って、あなただけの旅へ。</h1>
-        <p className="subtitle">
-          オーダーメイドの旅行プランニングと Osmo Pocket 3
-          のレンタルで、自由な旅をお手伝いします。
-        </p>
-        <a className="cta" href="#contact">
-          お問い合わせ
-        </a>
+        <div className="hero-content">
+          <h1>流れる空に乗って、あなただけの旅へ。</h1>
+          <p className="subtitle">
+            オーダーメイドの旅行プランニングと Osmo Pocket 3
+            のレンタルで、自由な旅をお手伝いします。
+          </p>
+          <a className="cta" href="#contact">
+            お問い合わせ
+          </a>
+        </div>
       </section>
 
       <section id="about">
