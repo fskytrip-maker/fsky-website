@@ -48,7 +48,7 @@ const slides = [
     ctaLabel: 'FSKYについて見る',
     ctaHref: '#about',
     image: markMetal,
-    imageLarge: true,
+    imageRight: true,
     dark: true,
     bgGradient:
       'radial-gradient(ellipse 70% 60% at 30% 20%, rgba(255, 255, 255, 0.08), transparent 60%), linear-gradient(135deg, #060607 0%, #1b1c20 45%, #070708 100%)',
@@ -102,7 +102,7 @@ function App() {
             }}
           >
             <div className="hero-content">
-              {slide.image && (
+              {slide.image && !slide.imageRight && (
                 <img
                   src={slide.image}
                   className={
@@ -118,6 +118,9 @@ function App() {
                 {slide.ctaLabel}
               </a>
             </div>
+            {slide.image && slide.imageRight && (
+              <img src={slide.image} className="slide-visual" alt="" />
+            )}
           </div>
         ))}
 
