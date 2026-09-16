@@ -59,20 +59,36 @@
 }
 
 #hero {
+  position: relative;
+  min-height: 70svh;
+  overflow: hidden;
+  color: #fff;
+
+  h1 {
+    color: #fff;
+  }
+
+  @media (max-width: 1024px) {
+    min-height: 60svh;
+  }
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: flex-end;
-  min-height: 70svh;
   padding: 48px 32px 64px;
-  color: #fff;
   background: radial-gradient(
       ellipse 60% 50% at 50% 0%,
       rgba(255, 255, 255, 0.25),
       transparent 70%
     ),
     linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%);
+  transition: opacity 0.6s ease;
 
-  h1 {
-    color: #fff;
+  &[aria-hidden='true'] {
+    pointer-events: none;
   }
 
   .hero-content {
@@ -84,9 +100,91 @@
     text-align: left;
   }
 
+  .slide-image {
+    height: 64px;
+    width: auto;
+    margin-bottom: 4px;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  .slide-image--large {
+    height: 180px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.35));
+
+    @media (max-width: 1024px) {
+      height: 120px;
+    }
+  }
+
   @media (max-width: 1024px) {
-    min-height: 60svh;
     padding: 32px 20px 40px;
+  }
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  &.prev {
+    left: 16px;
+  }
+  &.next {
+    right: 16px;
+  }
+
+  @media (max-width: 1024px) {
+    top: 24px;
+    translate: 0;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+}
+
+.dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &.active {
+    background: #fff;
   }
 }
 
