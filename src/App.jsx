@@ -36,9 +36,8 @@ function App() {
       <section id="about">
         <h2>FSKYについて</h2>
         <p>
-          「流空(りゅうくう)」から着想を得たブランド名 FSKY(Flowing
-          Sky)。流れる空に乗るように、自由でとらわれない旅をしてほしい
-          ——そんな想いを込めています。
+          行き先も、過ごし方も、思い出の残し方も——あなたらしい旅のかたちを
+          一緒に考える旅行ブランドです。
         </p>
       </section>
 
@@ -53,6 +52,7 @@ function App() {
 
       <footer id="contact">
         <p>旅のプランやレンタルについて、お気軽にお問い合わせください。</p>
+        <p className="footnote">FSKY — Flowing Sky</p>
       </footer>
     </>
   )
