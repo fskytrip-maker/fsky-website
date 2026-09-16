@@ -51,7 +51,7 @@ const slides = [
     imageRight: true,
     dark: true,
     bgGradient:
-      'radial-gradient(ellipse 70% 60% at 30% 20%, rgba(255, 255, 255, 0.08), transparent 60%), linear-gradient(135deg, #060607 0%, #1b1c20 45%, #070708 100%)',
+      'radial-gradient(ellipse 45% 55% at 78% 52%, rgba(140, 160, 185, 0.16), transparent 65%), radial-gradient(ellipse 70% 60% at 30% 20%, rgba(255, 255, 255, 0.07), transparent 60%), linear-gradient(135deg, #060607 0%, #1b1c20 45%, #070708 100%)',
   },
 ]
 

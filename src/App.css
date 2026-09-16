@@ -121,7 +121,7 @@
   translate: 0 -50%;
   height: 380px;
   width: auto;
-  filter: drop-shadow(0 24px 60px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.3));
   pointer-events: none;
 
   @media (max-width: 1024px) {
@@ -158,13 +158,13 @@
 
 .arrow {
   position: absolute;
-  top: 50%;
-  translate: 0 -50%;
+  top: 24px;
   width: 40px;
   height: 40px;
   border: none;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px);
   color: #fff;
   font-size: 24px;
   line-height: 1;
@@ -175,7 +175,7 @@
   transition: background 0.2s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.28);
   }
   &:focus-visible {
     outline: 2px solid #fff;
@@ -190,8 +190,6 @@
   }
 
   @media (max-width: 1024px) {
-    top: 24px;
-    translate: 0;
     width: 32px;
     height: 32px;
     font-size: 18px;
