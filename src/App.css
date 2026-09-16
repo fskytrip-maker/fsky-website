@@ -122,6 +122,29 @@
   }
 }
 
+.slide--dark {
+  h1 {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+  }
+}
+
+.tagline {
+  font-family: var(--heading);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: -12px;
+
+  @media (max-width: 1024px) {
+    font-size: 15px;
+    letter-spacing: 4px;
+  }
+}
+
 .arrow {
   position: absolute;
   top: 50%;
