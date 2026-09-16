@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import wordmark from './assets/fsky-wordmark.png'
 import mark from './assets/fsky-mark.png'
+import osmoPhoto from './assets/osmo-pocket-3.webp'
 import './App.css'
 
 const services = [
@@ -37,6 +38,7 @@ const slides = [
       '旅の景色や思い出を高画質な映像で。コンパクトジンバルカメラを手軽にレンタルできます。',
     ctaLabel: 'レンタルについて問い合わせる',
     ctaHref: '#contact',
+    bgImage: osmoPhoto,
   },
   {
     id: 'brand',
@@ -45,6 +47,7 @@ const slides = [
     ctaLabel: 'FSKYについて見る',
     ctaHref: '#about',
     image: mark,
+    imageLarge: true,
   },
 ]
 
@@ -85,11 +88,24 @@ function App() {
             className="slide"
             key={slide.id}
             aria-hidden={i !== index}
-            style={{ opacity: i === index ? 1 : 0 }}
+            style={{
+              opacity: i === index ? 1 : 0,
+              backgroundImage: slide.bgImage
+                ? `linear-gradient(180deg, rgba(8, 20, 40, 0.35) 0%, rgba(8, 20, 40, 0.75) 100%), url(${slide.bgImage})`
+                : undefined,
+              backgroundSize: slide.bgImage ? 'cover' : undefined,
+              backgroundPosition: slide.bgImage ? 'center' : undefined,
+            }}
           >
             <div className="hero-content">
               {slide.image && (
-                <img src={slide.image} className="slide-image" alt="" />
+                <img
+                  src={slide.image}
+                  className={
+                    slide.imageLarge ? 'slide-image slide-image--large' : 'slide-image'
+                  }
+                  alt=""
+                />
               )}
               <h1>{slide.headline}</h1>
               <p className="subtitle">{slide.subtitle}</p>

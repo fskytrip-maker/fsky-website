@@ -104,6 +104,17 @@
     height: 64px;
     width: auto;
     margin-bottom: 4px;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  .slide-image--large {
+    height: 180px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.35));
+
+    @media (max-width: 1024px) {
+      height: 120px;
+    }
   }
 
   @media (max-width: 1024px) {
