@@ -1,17 +1,20 @@
 import './App.css'
 
-const features = [
+const services = [
   {
-    title: 'Fast',
-    description: 'Built for speed from the ground up, so nothing gets in your way.',
+    title: 'オーダーメイド旅行プラン',
+    description:
+      'ご希望や予算、旅のテーマに合わせて、世界にひとつだけの旅程をプランニングします。',
   },
   {
-    title: 'Simple',
-    description: 'A clean, focused experience without unnecessary complexity.',
+    title: 'Osmo Pocket 3 レンタル',
+    description:
+      '旅の景色や思い出を高画質な映像で残せる、コンパクトジンバルカメラをレンタルできます。',
   },
   {
-    title: 'Reliable',
-    description: 'Made to work the same way every time, so you can count on it.',
+    title: '今後のサービス拡大',
+    description:
+      '事業拡大に伴い、新しいサービスを順次追加していく予定です。お楽しみに。',
   },
 ]
 
@@ -20,27 +23,36 @@ function App() {
     <>
       <section id="hero">
         <p className="eyebrow">FSKY</p>
-        <h1>A better way to get things done</h1>
+        <h1>流れる空に乗って、あなただけの旅へ。</h1>
         <p className="subtitle">
-          FSKY helps you move faster with less friction. This is a starting
-          point for the landing page — copy and design are easy to update.
+          オーダーメイドの旅行プランニングと Osmo Pocket 3
+          のレンタルで、自由な旅をお手伝いします。
         </p>
         <a className="cta" href="#contact">
-          Get started
+          お問い合わせ
         </a>
       </section>
 
-      <section id="features">
-        {features.map((feature) => (
-          <div className="feature" key={feature.title}>
-            <h2>{feature.title}</h2>
-            <p>{feature.description}</p>
+      <section id="about">
+        <h2>FSKYについて</h2>
+        <p>
+          「流空(りゅうくう)」から着想を得たブランド名 FSKY(Flowing
+          Sky)。流れる空に乗るように、自由でとらわれない旅をしてほしい
+          ——そんな想いを込めています。
+        </p>
+      </section>
+
+      <section id="services">
+        {services.map((service) => (
+          <div className="service" key={service.title}>
+            <h2>{service.title}</h2>
+            <p>{service.description}</p>
           </div>
         ))}
       </section>
 
       <footer id="contact">
-        <p>Interested in FSKY? Reach out to learn more.</p>
+        <p>旅のプランやレンタルについて、お気軽にお問い合わせください。</p>
       </footer>
     </>
   )

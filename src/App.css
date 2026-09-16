@@ -4,60 +4,101 @@
   align-items: center;
   gap: 16px;
   place-content: center;
-  flex-grow: 1;
-  padding: 64px 20px;
+  padding: 120px 20px;
   text-align: center;
+  color: #fff;
+  background: radial-gradient(
+      ellipse 60% 50% at 50% 0%,
+      rgba(255, 255, 255, 0.25),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%);
+
+  h1,
+  .eyebrow {
+    color: #fff;
+  }
 
   @media (max-width: 1024px) {
-    padding: 40px 20px;
+    padding: 72px 20px;
   }
 }
 
 .eyebrow {
   font-family: var(--heading);
-  font-weight: 600;
-  letter-spacing: 2px;
+  font-weight: 700;
+  letter-spacing: 4px;
   text-transform: uppercase;
-  color: var(--accent);
   font-size: 14px;
+  opacity: 0.85;
 }
 
 .subtitle {
   max-width: 560px;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .cta {
   margin-top: 8px;
   display: inline-flex;
   align-items: center;
-  padding: 12px 28px;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
+  padding: 14px 32px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--sky-1);
+  font-weight: 700;
   text-decoration: none;
-  transition: opacity 0.2s;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
 
   &:hover {
-    opacity: 0.85;
+    transform: translateY(-1px);
+    opacity: 0.92;
   }
   &:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid #fff;
     outline-offset: 2px;
   }
 }
 
-#features {
+#about {
+  padding: 56px 20px;
+  max-width: 680px;
+  margin: 0 auto;
+
+  p {
+    margin-top: 12px;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 40px 20px;
+  }
+}
+
+#services {
   display: flex;
   border-top: 1px solid var(--border);
   text-align: left;
 
-  .feature {
+  .service {
     flex: 1 1 0;
     padding: 32px;
+    border-left: 1px solid var(--border);
+
+    &:first-child {
+      border-left: none;
+    }
+
     @media (max-width: 1024px) {
       padding: 24px 20px;
+      border-left: none;
+      border-top: 1px solid var(--border);
+
+      &:first-child {
+        border-top: none;
+      }
     }
   }
 
