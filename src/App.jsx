@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import wordmark from './assets/fsky-wordmark.png'
-import mark from './assets/fsky-mark.png'
+import markMetal from './assets/fsky-mark-metal.png'
 import osmoPhoto from './assets/osmo-pocket-3.webp'
 import './App.css'
 
@@ -42,12 +42,16 @@ const slides = [
   },
   {
     id: 'brand',
-    headline: 'FSKY — Flowing Sky',
+    headline: 'FSKY',
+    tagline: 'FLOWING SKY',
     subtitle: '流れる空に乗るように、自由でとらわれない旅を。',
     ctaLabel: 'FSKYについて見る',
     ctaHref: '#about',
-    image: mark,
-    imageLarge: true,
+    image: markMetal,
+    imageRight: true,
+    dark: true,
+    bgGradient:
+      'radial-gradient(ellipse 45% 55% at 78% 52%, rgba(140, 160, 185, 0.16), transparent 65%), radial-gradient(ellipse 70% 60% at 30% 20%, rgba(255, 255, 255, 0.07), transparent 60%), linear-gradient(135deg, #060607 0%, #1b1c20 45%, #070708 100%)',
   },
 ]
 
@@ -85,20 +89,20 @@ function App() {
       >
         {slides.map((slide, i) => (
           <div
-            className="slide"
+            className={slide.dark ? 'slide slide--dark' : 'slide'}
             key={slide.id}
             aria-hidden={i !== index}
             style={{
               opacity: i === index ? 1 : 0,
               backgroundImage: slide.bgImage
                 ? `linear-gradient(180deg, rgba(8, 20, 40, 0.35) 0%, rgba(8, 20, 40, 0.75) 100%), url(${slide.bgImage})`
-                : undefined,
+                : slide.bgGradient || undefined,
               backgroundSize: slide.bgImage ? 'cover' : undefined,
               backgroundPosition: slide.bgImage ? 'center' : undefined,
             }}
           >
             <div className="hero-content">
-              {slide.image && (
+              {slide.image && !slide.imageRight && (
                 <img
                   src={slide.image}
                   className={
@@ -108,11 +112,15 @@ function App() {
                 />
               )}
               <h1>{slide.headline}</h1>
+              {slide.tagline && <p className="tagline">{slide.tagline}</p>}
               <p className="subtitle">{slide.subtitle}</p>
               <a className="cta" href={slide.ctaHref}>
                 {slide.ctaLabel}
               </a>
             </div>
+            {slide.image && slide.imageRight && (
+              <img src={slide.image} className="slide-visual" alt="" />
+            )}
           </div>
         ))}
 
