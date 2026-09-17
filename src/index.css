@@ -15,6 +15,24 @@
   --shadow:
     rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
+  --gold: #d9b25f;
+  --gold-bg: rgba(217, 178, 95, 0.12);
+  --gold-border: rgba(217, 178, 95, 0.4);
+  --line-green: #027a30;
+  --line-green-dark: #015c25;
+  --card-bg: #131317;
+  --card-bg-hover: #17181c;
+  --card-border: rgba(255, 255, 255, 0.08);
+
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 40px;
+  --space-xl: 64px;
+  --space-2xl: 96px;
+  --radius-card: 16px;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -68,16 +86,71 @@ h1 {
   }
 }
 h2 {
-  font-size: 24px;
+  font-size: 32px;
   line-height: 118%;
-  letter-spacing: -0.24px;
+  letter-spacing: -0.32px;
   margin: 0 0 8px;
   @media (max-width: 1024px) {
-    font-size: 20px;
+    font-size: 24px;
   }
+}
+h3 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 18px;
+  line-height: 130%;
+  margin: 0 0 6px;
 }
 p {
   margin: 0;
+}
+
+.section {
+  padding: var(--space-2xl) 20px;
+  max-width: 1060px;
+  margin: 0 auto;
+
+  @media (max-width: 1024px) {
+    padding: var(--space-xl) 20px;
+  }
+}
+
+.section-head {
+  max-width: 640px;
+  margin: 0 auto var(--space-lg);
+  text-align: center;
+
+  @media (max-width: 1024px) {
+    margin-bottom: var(--space-md);
+  }
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--heading);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--space-xs);
+}
+
+.section-desc {
+  color: var(--text);
+  margin-top: var(--space-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 code,
