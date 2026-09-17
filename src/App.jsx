@@ -183,8 +183,12 @@ function VideoHero() {
 
       if (!reduceMotionRef.current && video.readyState >= 1) {
         const target = progress * duration
-        if (Math.abs(video.currentTime - target) > 0.01) {
-          video.currentTime = target
+        if (Math.abs(video.currentTime - target) > 0.045) {
+          if (typeof video.fastSeek === 'function') {
+            video.fastSeek(target)
+          } else {
+            video.currentTime = target
+          }
         }
       }
 
