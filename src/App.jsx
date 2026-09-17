@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import wordmark from './assets/fsky-wordmark.png'
 import markMetal from './assets/fsky-mark-metal.png'
-import osmoPhoto from './assets/osmo-pocket-3.webp'
 import './App.css'
 
 const LINE_URL = 'https://line.me/R/ti/p/%40085ccfzq'
@@ -145,55 +144,112 @@ const faqs = [
   },
 ]
 
-const slides = [
-  {
-    id: 'travel',
-    headline: '流れる空に乗って、あなただけの旅へ。',
-    subtitle:
-      'オーダーメイドの旅行プランニングと Osmo Pocket 3 のレンタルで、自由な旅をお手伝いします。',
-    ctaLabel: 'お問い合わせ',
-    ctaHref: '#contact',
-  },
-  {
-    id: 'osmo',
-    headline: 'Osmo Pocket 3、レンタル開始。',
-    subtitle:
-      '旅の景色や思い出を高画質な映像で。コンパクトジンバルカメラを手軽にレンタルできます。',
-    ctaLabel: 'レンタルについて問い合わせる',
-    ctaHref: '#contact',
-    bgImage: osmoPhoto,
-  },
-  {
-    id: 'brand',
-    headline: 'FSKY',
-    tagline: 'FLOWING SKY',
-    subtitle: '流れる空に乗るように、自由でとらわれない旅を。',
-    ctaLabel: 'FSKYについて見る',
-    ctaHref: '#about',
-    image: markMetal,
-    imageRight: true,
-    dark: true,
-    bgGradient:
-      'radial-gradient(ellipse 45% 55% at 78% 52%, rgba(140, 160, 185, 0.16), transparent 65%), radial-gradient(ellipse 70% 60% at 30% 20%, rgba(255, 255, 255, 0.07), transparent 60%), linear-gradient(135deg, #060607 0%, #1b1c20 45%, #070708 100%)',
-  },
-]
+const HERO_VIDEO_DURATION_FALLBACK = 5
 
-function App() {
-  const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
+function VideoHero() {
+  const trackRef = useRef(null)
+  const videoRef = useRef(null)
+  const copyRef = useRef(null)
+  const reduceMotionRef = useRef(false)
+  const [videoSupported, setVideoSupported] = useState(true)
 
   useEffect(() => {
-    if (paused) return
-    const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length)
-    }, 6000)
-    return () => clearInterval(timer)
-  }, [paused])
+    const track = trackRef.current
+    const video = videoRef.current
+    const copy = copyRef.current
+    if (!track || !video) return
 
-  const goTo = (i) => {
-    setIndex((i + slides.length) % slides.length)
-  }
+    reduceMotionRef.current = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
 
+    let duration = HERO_VIDEO_DURATION_FALLBACK
+    const onLoadedMetadata = () => {
+      if (video.duration && Number.isFinite(video.duration)) {
+        duration = video.duration
+      }
+    }
+    video.addEventListener('loadedmetadata', onLoadedMetadata)
+    video.pause()
+
+    let ticking = false
+
+    const update = () => {
+      ticking = false
+      const rect = track.getBoundingClientRect()
+      const scrollable = rect.height - window.innerHeight
+      const progress =
+        scrollable > 0 ? Math.min(Math.max(-rect.top / scrollable, 0), 1) : 0
+
+      if (!reduceMotionRef.current && video.readyState >= 1) {
+        const target = progress * duration
+        if (Math.abs(video.currentTime - target) > 0.01) {
+          video.currentTime = target
+        }
+      }
+
+      if (copy) {
+        const fade = Math.max(0, 1 - progress / 0.22)
+        copy.style.opacity = String(fade)
+        copy.style.transform = `translateY(${(1 - fade) * -16}px)`
+      }
+    }
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(update)
+      }
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+
+    return () => {
+      video.removeEventListener('loadedmetadata', onLoadedMetadata)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
+  return (
+    <section id="hero" ref={trackRef}>
+      <div className="hero-sticky">
+        {videoSupported && (
+          <video
+            ref={videoRef}
+            className="hero-video"
+            src="/fsky-hero.mp4"
+            poster="/fsky-hero-poster.jpg"
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            onError={() => setVideoSupported(false)}
+          />
+        )}
+        {!videoSupported && (
+          <img
+            src="/fsky-hero-poster.jpg"
+            className="hero-video hero-video-fallback"
+            alt=""
+            aria-hidden="true"
+          />
+        )}
+        <div className="hero-scrim" />
+        <div className="hero-copy" ref={copyRef}>
+          <p className="hero-tagline-jp">流れる空に乗るように、自由でとらわれない旅を。</p>
+          <a className="cta hero-cta" href={LINE_URL} target="_blank" rel="noreferrer">
+            公式LINEで相談する
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function App() {
   return (
     <>
       <header id="nav">
@@ -209,77 +265,7 @@ function App() {
         </nav>
       </header>
 
-      <section
-        id="hero"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
-        {slides.map((slide, i) => (
-          <div
-            className={slide.dark ? 'slide slide--dark' : 'slide'}
-            key={slide.id}
-            aria-hidden={i !== index}
-            style={{
-              opacity: i === index ? 1 : 0,
-              backgroundImage: slide.bgImage
-                ? `linear-gradient(180deg, rgba(8, 20, 40, 0.35) 0%, rgba(8, 20, 40, 0.75) 100%), url(${slide.bgImage})`
-                : slide.bgGradient || undefined,
-              backgroundSize: slide.bgImage ? 'cover' : undefined,
-              backgroundPosition: slide.bgImage ? 'center' : undefined,
-            }}
-          >
-            <div className="hero-content">
-              {slide.image && !slide.imageRight && (
-                <img
-                  src={slide.image}
-                  className={
-                    slide.imageLarge ? 'slide-image slide-image--large' : 'slide-image'
-                  }
-                  alt=""
-                />
-              )}
-              <h1>{slide.headline}</h1>
-              {slide.tagline && <p className="tagline">{slide.tagline}</p>}
-              <p className="subtitle">{slide.subtitle}</p>
-              <a className="cta" href={slide.ctaHref}>
-                {slide.ctaLabel}
-              </a>
-            </div>
-            {slide.image && slide.imageRight && (
-              <img src={slide.image} className="slide-visual" alt="" />
-            )}
-          </div>
-        ))}
-
-        <button
-          type="button"
-          className="arrow prev"
-          aria-label="前のスライド"
-          onClick={() => goTo(index - 1)}
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          className="arrow next"
-          aria-label="次のスライド"
-          onClick={() => goTo(index + 1)}
-        >
-          ›
-        </button>
-
-        <div className="dots">
-          {slides.map((slide, i) => (
-            <button
-              type="button"
-              key={slide.id}
-              className={i === index ? 'dot active' : 'dot'}
-              aria-label={`スライド ${i + 1} へ`}
-              onClick={() => goTo(i)}
-            />
-          ))}
-        </div>
-      </section>
+      <VideoHero />
 
       <section id="about" className="section">
         <div className="section-head">
