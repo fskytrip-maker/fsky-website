@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FSKY Suitcase Hero — Three.js Interaction Prototype (NOT FINAL ART)</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #0a0a0c; color: #f5f5f6; font-family: system-ui, sans-serif; }
+
+  .topBars { position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+  .banner {
+    background: #7a1d1d; color: #fff; text-align: center;
+    padding: 7px 8px; font-size: 12px; font-weight: 700; letter-spacing: .3px;
+  }
+
+  .track { position: relative; height: 400vh; }
+  /* position: sticky, not fixed — sticky is CONTAINED by its nearest scrolling
+     ancestor with a defined height (.track, 400vh below), so it releases and
+     scrolls away naturally once the track's bottom edge passes, instead of
+     permanently covering the content sections the way `fixed` did (verified
+     bug: clicking a card scrolled the URL/anchor correctly, but the fixed
+     stage kept painting over the section content regardless of scroll). */
+  .stage {
+    position: sticky; top: 0; height: 100dvh; overflow: hidden;
+    background: linear-gradient(180deg, #0c4a6e 0%, #0284c7 55%, #7dd3fc 100%);
+  }
+  .stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+
+  /* Dev-only chrome. pointer-events:none on the HUD and a collapsed <details>
+     for the angle buttons keep it from covering (and swallowing clicks on)
+     the lower part of the card stream — on a 375x812 phone the FAQ card's
+     bottom edge sits exactly where the expanded button row used to be. */
+  .hud {
+    position: fixed; bottom: 12px; left: 12px; z-index: 50;
+    font-family: ui-monospace, monospace; font-size: 12px;
+    background: rgba(0,0,0,.7); padding: 10px 12px; border-radius: 8px;
+    line-height: 1.6; white-space: pre; max-width: 46vw;
+    pointer-events: none;
+  }
+  .markers { position: fixed; bottom: 12px; right: 12px; z-index: 50; text-align: right; }
+  .markers summary {
+    display: inline-block; list-style: none; cursor: pointer;
+    font-family: ui-monospace, monospace; font-size: 11px; color: #fff;
+    background: rgba(0,0,0,.7); border-radius: 6px; padding: 5px 8px;
+  }
+  .markers summary::-webkit-details-marker { display: none; }
+  .markers .markerRow {
+    display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; margin-bottom: 6px;
+  }
+  .markers button {
+    font-family: ui-monospace, monospace; font-size: 11px;
+    background: rgba(0,0,0,.7); color: #fff; border: 1px solid rgba(255,255,255,.3);
+    padding: 6px 7px; border-radius: 6px; cursor: pointer;
+  }
+
+  /* CLEAN PRESENTATION MODE: ?clean (or press "h" to toggle). Hides ALL debug
+     chrome — the two prototype banners, the HUD and the dev controls. Nothing
+     in the 3D layout reads these elements: suitcase placement and scale are
+     solved purely from the stage size and LAYOUTS, so the hero is identical
+     with or without them (the banners simply overlay the top of the stage). */
+  html.clean .topBars, html.clean .hud, html.clean .markers { display: none !important; }
+
+  .after { padding: 0; text-align: center; color: #e5e7eb; background: #0b1220; }
+  .siteSection { padding: 72px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .siteSection h2 { font-size: 20px; margin: 0 0 12px; }
+  .siteSection p { color: #9ca3af; margin: 0; }
+  .lineCta { background: #0a0a0c; border-bottom: none; padding: 96px 24px; }
+  .lineCtaLead { font-size: 18px; margin: 0 0 24px; color: #f5f5f6; }
+  .lineCtaButton {
+    display: inline-block; background: #06c755; color: #fff; font-weight: 700;
+    padding: 14px 36px; border-radius: 999px; text-decoration: none; font-size: 15px;
+    outline: 2px dashed rgba(255,255,255,.55); outline-offset: 3px;
+  }
+  .lineCtaProvisional {
+    display: block; margin-top: 14px; font-size: 12px; color: #f4b740; font-weight: 600;
+  }
+
+  /* Initial-view branding overlay: real HTML text (not baked into a texture),
+     matching the approved brief's exact copy. Fades out early in the fall,
+     same timing family as the orbit ring fading in the 3D scene. */
+  .brandOverlay {
+    position: absolute; top: 14.5%; left: 0; right: 0; text-align: center;
+    pointer-events: none; z-index: 2; color: #fff;
+    text-shadow: 0 2px 18px rgba(0,40,80,.5);
+  }
+  /* Sized and placed from image 01 (logo text 0.26 of frame width, top at 0.145
+     of frame height on desktop; 0.46 / 0.194 on mobile), so the whole block ends
+     above the centre case's top (0.367 / 0.413 of frame height) instead of
+     running into it. Portrait windows switch to the mobile block. */
+  @media (max-aspect-ratio: 1/1) { .brandOverlay { top: 19.4%; } }
+  /* The EXACT supplied FSKY wordmark (public/prototype-assets/fsky-wordmark.png,
+     a byte-identical copy of src/assets/fsky-wordmark.png) — never retyped. It
+     is mid-blue artwork, so on the deep-blue sky it gets a white halo (CSS
+     only; the artwork itself is not recoloured). A light/white luminous
+     wordmark variant, as drawn in the reference, is not among the supplied
+     files. */
+  .brandLogoImg {
+    display: block; margin: 0 auto; width: clamp(200px, 26vw, 520px); height: auto;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,.75)) drop-shadow(0 0 26px rgba(160,215,255,.6));
+  }
+  @media (max-aspect-ratio: 1/1) { .brandLogoImg { width: 46vw; } }
+  .lineLogoImg { display: block; margin: 0 auto 18px; width: min(56vw, 300px); height: auto; }
+  .brandTagline { font-size: max(12px, 1.45vw); font-weight: 300; letter-spacing: .32em; padding-left: .32em; margin-top: 12px; line-height: 1.5; }
+  .brandTagline span { display: inline-block; }   /* wraps only between the two clauses when narrow */
+  .brandTaglineEn { font-size: max(9px, .8vw); letter-spacing: .5em; padding-left: .5em; margin-top: 8px; opacity: .92; }
+  @media (max-aspect-ratio: 1/1) {
+    .brandTagline { font-size: 3.9vw; margin-top: 22px; letter-spacing: .3em; padding-left: .3em; }
+    .brandTagline span { display: block; }   /* two lines, as in mobile-01 */
+    .brandTaglineEn { font-size: max(9px, 2.4vw); margin-top: 8px; letter-spacing: .42em; padding-left: .42em; }
+  }
+
+  /* Cards: the VISIBLE artwork is the Three.js mesh, rendered with real depth
+     testing against the suitcase for the card's entire lifetime — these
+     .card elements exist ONLY for keyboard focus, screen readers, and the
+     visible focus ring: kept aligned with the 3D card's projected screen
+     quad every frame (see updateCardInteraction()).
+     They never take pointer input: pointer-events is `none` permanently.
+     Pointer activation is resolved from the ACTUAL pointer position by a
+     raycast against the frontmost visible geometry (see resolveFrontmost()
+     and the canvas click handler) — an HTML rectangle can't know which card
+     is on top at a given pixel, so with overlapping cards a visible PLAN
+     label could be intercepted by the CAMPAIGN rectangle beneath it
+     (reported and reproduced at 375x812: clicking PLAN navigated to
+     #section-campaign).
+     Aspect ratio matches the visible card BODY (236x356 logical of the 260x380 texture).
+     Transparency comes from background/border/box-shadow/color being
+     `transparent`/`none`, NOT from `opacity: 0` — opacity would also erase
+     the :focus-visible outline. Cards that aren't available yet are removed
+     from the Tab order (tabIndex, set in JS). */
+  .card {
+    position: absolute; left: 0; top: 0; width: 130px;
+    aspect-ratio: 236 / 356;
+    margin-left: -65px; margin-top: calc(-65px * 356 / 236);
+    border-radius: 14px;
+    background: transparent; border: none; box-shadow: none;
+    text-decoration: none; display: block; overflow: hidden;
+    color: transparent; font-size: 11px; font-weight: 700;
+    z-index: 3; pointer-events: none;
+    transform-origin: center center;
+    will-change: transform;
+  }
+  .card:focus-visible {
+    outline: 2px solid #7dd3fc; outline-offset: 4px;
+  }
+  .card .ico { display: none; }
+  /* Japanese description: NOT drawn on the card art (the reference cards carry
+     only the English label + icon) but kept in the accessibility tree — the
+     link also has an aria-label with it — and shown in the destination
+     sections, which carry the Japanese headings. Visually hidden, not display:none. */
+  .card .jp {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+
+  .assetNotice {
+    background: rgba(122,29,29,.92); color: #ffe9b3; font-size: 11px;
+    text-align: center; padding: 4px 8px; font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+<div class="topBars">
+  <div class="banner">プロトタイプ(Three.js 実 3D 幾何、仮素材) — 本番ヒーローではありません</div>
+  <div class="assetNotice">材質はプロシージャル生成のプレースホルダー(縞テクスチャ/単色)。写実的なテクスチャ・法線マップ・最終ブランド素材は未着手。</div>
+</div>
+
+<div class="track" id="track">
+  <div class="stage" id="stage">
+    <div class="brandOverlay" id="brandOverlay">
+      <img class="brandLogoImg" src="prototype-assets/fsky-wordmark.png" width="988" height="202" alt="FSKY" decoding="async" />
+      <div class="brandTagline"><span>空の向こうへ、</span><span>あなたらしい旅を。</span></div>
+      <div class="brandTaglineEn">Beyond the sky.</div>
+    </div>
+    <div class="cardLayer" id="cardLayer"></div>
+  </div>
+</div>
+
+<div class="after" id="sectionsAfter">
+  <section id="section-service" class="siteSection"><h2>サービス内容</h2><p>SERVICE — プレースホルダーセクション</p></section>
+  <section id="section-plan" class="siteSection"><h2>プランの一例</h2><p>PLAN — プレースホルダーセクション</p></section>
+  <section id="section-campaign" class="siteSection"><h2>開業キャンペーン</h2><p>CAMPAIGN — プレースホルダーセクション</p></section>
+  <section id="section-review" class="siteSection"><h2>口コミ</h2><p>REVIEW — プレースホルダーセクション</p></section>
+  <section id="section-profile" class="siteSection"><h2>運営者プロフィール</h2><p>PROFILE — プレースホルダーセクション</p></section>
+  <section id="section-faq" class="siteSection"><h2>よくある質問</h2><p>FAQ — プレースホルダーセクション</p></section>
+  <section id="section-line" class="siteSection lineCta">
+    <img class="lineLogoImg" src="prototype-assets/fsky-wordmark.png" width="988" height="202" alt="FSKY" loading="lazy" decoding="async" />
+    <p class="lineCtaLead">空の向こうへ、あなたらしい旅を。</p>
+    <a class="lineCtaButton" href="#section-line" aria-describedby="lineCtaNotice">公式LINEで相談する(仮リンク)</a>
+    <span id="lineCtaNotice" class="lineCtaProvisional">※ 本番URL未設定 — 現在は仮のプレースホルダーリンクです</span>
+  </section>
+</div>
+
+<div class="hud" id="hud">loading three.js…</div>
+<details class="markers" id="devMarkers">
+  <summary>dev</summary>
+  <div class="markerRow">
+    <button id="mStart">start(p=0)</button>
+    <button id="mKey">key(p=.82)</button>
+    <button data-deg="0">0°(p=.15)</button>
+    <button data-deg="45">45°</button>
+    <button data-deg="89">89°</button>
+    <button data-deg="90">90°</button>
+    <button data-deg="91">91°</button>
+    <button data-deg="132">132°</button>
+  </div>
+</details>
+
+<script>
+if (/[?&]clean(=1|=true)?(&|$)/.test(location.search)) document.documentElement.classList.add('clean');
+</script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+/* ============================================================================
+   SCROLL PROGRESS / EASING — ported unchanged from the previous CSS-only pass
+   (same constants, same easing curve, same progress->angle inversion for the
+   deg-marker test buttons). Only the RENDERING target changes: instead of
+   writing CSS transforms, these values now drive a real Three.js scene graph.
+   ============================================================================ */
+const OPEN_START = 0.15;
+const OPEN_END = 0.65;
+const LID_MAX_DEG = 132;
+const OPEN_EASE_POWER = 2.5;
+
+function clamp(v, a, b) { return Math.min(Math.max(v, a), b); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function smooth(t0, t1, progress) { return clamp((progress - t0) / (t1 - t0), 0, 1); }
+function easeOpen(tLinear) { return Math.pow(tLinear, OPEN_EASE_POWER); }
+function easeOpenInverse(tEased) { return Math.pow(tEased, 1 / OPEN_EASE_POWER); }
+function progressForDeg(deg) {
+  const openTEased = deg / LID_MAX_DEG;
+  const openTLinear = easeOpenInverse(openTEased);
+  return OPEN_START + (OPEN_END - OPEN_START) * openTLinear;
+}
+
+const FRAME_SHIFT_X = 0.44;   // world units, shift at full open. Re-tuned after fixing the framing measurement itself (see projectedScreenBounds): the old min/max-only projection under-reported real left-edge overflow at full open that this 8-corner measurement caught.
+const FRAME_SCALE_MIN = 0.74;
+const SWING_HUMP = 0.36;     // world units, extra shift at the lidDeg=90 hump (lid-wheels arc). Re-tuned alongside FRAME_SHIFT_X after fixing the framing measurement (see projectedScreenBounds).
+const CAMERA_ROT_Y = THREE.MathUtils.degToRad(-16);
+const CAMERA_ROT_X = THREE.MathUtils.degToRad(6);
+
+// The assembly (suitcase) moves from its opening-phase framing to a KEYFRAME
+// placement solved from screen-space targets (see LAYOUTS / solveAssemblyKey)
+// across this progress window. It ends exactly when the lid finishes opening,
+// so the placement is solved for the fully-open pose and is static from here
+// on — nothing keeps drifting between OPEN_END and the hero release.
+const CARD_STREAM_PHASE_START = 0.26;
+const CARD_STREAM_PHASE_END = OPEN_END;
+
+/* ============================================================================
+   THREE.JS SCENE
+   ============================================================================ */
+const stageEl = document.getElementById('stage');
+// preserveDrawingBuffer: true — without it, this on-demand (non-continuously-
+// animating) renderer's WebGL buffer can be cleared before an external OS-level
+// screenshot tool captures a frame, showing solid black despite the canvas
+// content being valid (confirmed via canvas.toDataURL() readback during
+// debugging). Only a small memory/perf cost, worth it for a review prototype.
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+stageEl.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0, 9);
+
+// LIGHTING — one sun, consistent everywhere. The sun is UPPER RIGHT (image 05's
+// flare sits in the top-right corner): the key light comes from that side, the
+// sky shader draws the glow at the same corner, and the reflection map below
+// has its bright spot at the matching direction. Fill is the open azure sky
+// from above and white bounce from the cloud deck below (not the dark navy
+// "ground" colour the earlier pass used, which made shaded metal read as an
+// indoor studio).
+scene.add(new THREE.AmbientLight(0xeaf3ff, 0.26));
+scene.add(new THREE.HemisphereLight(0x9fd2ff, 0xe6f0ff, 0.62));
+const keyLight = new THREE.DirectionalLight(0xfff3dc, 1.7);
+keyLight.position.set(5, 5.5, 4.5);
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0xbcd8ff, 0.3);
+fillLight.position.set(-4, -1.5, 4);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.55);
+rimLight.position.set(2.5, 3, -5);
+scene.add(rimLight);
+
+/* ----------------------------------------------------------------------------
+   SKY — a full-screen shader drawn BEFORE the 3D scene (see render()).
+   Uses the supplied approved cloud photograph (public/prototype-assets/
+   sky-clouds.jpg: references/approved-cloud-photo.png cropped above its
+   bottom-left tree branch and trimmed 4px left / 6px right where the source has
+   a dark edge column; no suitcases or cards in it, so nothing is
+   duplicated). It is NOT pasted as a flat image:
+    - a window of the photo is positioned per frame (aspect-aware: 3:2 window
+      on landscape, tall portrait window on phones) and PANNED with scroll
+      progress so the clouds rise as the case falls (parallax);
+    - the photo's own sky is much darker than the approved azure (measured
+      ~RGB 0,35,120 vs the reference's ~6,96,206), so the SKY is replaced by
+      an azure gradient matched to image 05 and only the CLOUD coverage and
+      shading are taken from the photo (its grey-lavender shadows are pulled
+      to pale sky blue); no blur is used to hide texture;
+    - the sun glow, rays and lens-flare ghosts are procedural, top-right.
+   Colour is authored directly in display (sRGB) space and written raw.
+   ---------------------------------------------------------------------------- */
+const SKY_PHOTO = { url: 'prototype-assets/sky-clouds.jpg', w: 1190, h: 2280 };
+const skyScene = new THREE.Scene();
+const skyMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uMap: { value: null }, uHasMap: { value: 0 },
+    uWin: { value: new THREE.Vector2(1500, 844) }, uTopLeft: { value: new THREE.Vector2(0, 250) },
+    uPhoto: { value: new THREE.Vector2(SKY_PHOTO.w, SKY_PHOTO.h) },
+    uSun: { value: new THREE.Vector2(0.985, 1.01) }, uAspect: { value: 1.78 }, uSunPower: { value: 1.0 },
+  },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    uniform sampler2D uMap; uniform float uHasMap; uniform vec2 uWin; uniform vec2 uTopLeft; uniform vec2 uPhoto;
+    uniform vec2 uSun; uniform float uAspect; uniform float uSunPower;
+    varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main(){
+      vec2 uv = vUv;
+      float g = 1.0 - uv.y;
+      vec3 skyTop = vec3(0.020, 0.345, 0.800);
+      vec3 skyMid = vec3(0.090, 0.475, 0.905);
+      vec3 skyLow = vec3(0.385, 0.705, 0.985);
+      vec3 sky = mix(skyTop, skyMid, smoothstep(0.0, 0.55, g));
+      sky = mix(sky, skyLow, smoothstep(0.5, 1.0, g));
+      vec2 sd = (uv - uSun) * vec2(uAspect, 1.0);
+      float sunDist = length(sd);
+      sky += vec3(0.05, 0.10, 0.14) * exp(-sunDist * 2.2);
+      vec3 col = sky;
+      if (uHasMap > 0.5) {
+        vec2 p = uTopLeft + vec2(uv.x, 1.0 - uv.y) * uWin;
+        vec2 tuv = vec2(p.x / uPhoto.x, 1.0 - p.y / uPhoto.y);
+        vec3 ph = texture2D(uMap, tuv).rgb;
+        float m = smoothstep(0.10, 0.52, ph.r);
+        float l = dot(ph, vec3(0.299, 0.587, 0.114));
+        float cl = clamp((l - (1.0 - m) * 0.10) / max(m, 0.05), 0.0, 1.0);
+        vec3 shade = vec3(0.47, 0.62, 0.92);
+        vec3 cloud = mix(shade, vec3(1.0), smoothstep(0.50, 0.97, cl));
+        cloud *= mix(vec3(1.0), vec3(1.02, 1.0, 0.965), uv.x);
+        col = mix(sky, cloud, m);
+      }
+      float ang = atan(sd.y, sd.x);
+      float glow = 0.9 * exp(-sunDist * 5.5) + 0.7 * exp(-sunDist * 26.0) + 1.8 * exp(-sunDist * 110.0);
+      float rays = pow(0.5 + 0.5 * sin(ang * 22.0 + 0.7), 14.0) * 0.14 + pow(0.5 + 0.5 * sin(ang * 9.0 - 0.4), 10.0) * 0.10;
+      rays *= exp(-sunDist * 3.2);
+      col += vec3(1.0, 0.98, 0.92) * (glow + rays) * uSunPower;
+      vec2 toC = vec2(0.5) - uSun;
+      for (int i = 0; i < 4; i++) {
+        float t = 0.24 + float(i) * 0.17;
+        vec2 gd = (uv - (uSun + toC * t)) * vec2(uAspect, 1.0);
+        float r = 0.017 + 0.008 * float(i);
+        float d = length(gd);
+        col += vec3(0.72, 0.86, 1.0) * (smoothstep(r, r * 0.75, d) * 0.05 + smoothstep(r * 0.86, r, d) * smoothstep(r * 1.10, r, d) * 0.07);
+      }
+      col = clamp(col, 0.0, 1.0);
+      col += (hash(gl_FragCoord.xy) - 0.5) / 255.0;
+      gl_FragColor = vec4(col, 1.0);
+    }`,
+  depthTest: false, depthWrite: false,
+});
+const skyMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), skyMat);
+skyMesh.frustumCulled = false;
+skyScene.add(skyMesh);
+renderer.autoClear = false;   // render() clears once, then draws sky and scene
+
+// Reflection map. Built from the same photo: azure dome above, the cloud deck
+// below the horizon (blurred — only colour/brightness matters for
+// reflections), and a bright sun spot at the direction of keyLight (upper
+// right, toward the viewer). Until the photo loads it is the gradient only.
+function makeSkyEnvironment(img) {
+  const W = 1024, H = 512;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#1b62e8'); grad.addColorStop(0.40, '#4aa3ff'); grad.addColorStop(0.5, '#d4e8ff'); grad.addColorStop(1, '#f2f7ff');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  if (img) {
+    ctx.save();
+    ctx.filter = 'blur(5px)';
+    ctx.drawImage(img, 0, 900, 1200, 1150, 0, H * 0.44, W, H * 0.56);
+    ctx.drawImage(img, 0, 1000, 1200, 500, 0, H * 0.34, W, H * 0.16);
+    ctx.restore();
+  }
+  const sx = W * 0.625, sy = H * 0.287;
+  const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 110);
+  sg.addColorStop(0, 'rgba(255,255,255,1)'); sg.addColorStop(0.22, 'rgba(255,250,232,0.9)'); sg.addColorStop(1, 'rgba(255,250,232,0)');
+  ctx.fillStyle = sg; ctx.fillRect(sx - 130, sy - 130, 260, 260);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromEquirectangular(tex).texture;
+  tex.dispose();
+  pmrem.dispose();
+  return envMap;
+}
+scene.environment = makeSkyEnvironment(null);
+
+const skyImg = new Image();
+skyImg.decoding = 'async';
+skyImg.onload = () => {
+  const t = new THREE.Texture(skyImg);
+  t.wrapS = THREE.MirroredRepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping;
+  t.colorSpace = THREE.NoColorSpace;      // raw display values; the shader grades in sRGB and writes them unconverted
+  t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  t.needsUpdate = true;
+  skyMat.uniforms.uMap.value = t; skyMat.uniforms.uHasMap.value = 1;
+  const old = scene.environment;
+  scene.environment = makeSkyEnvironment(skyImg);
+  if (old) old.dispose();
+  onSkyImageReady();
+};
+skyImg.src = SKY_PHOTO.url;
+function onSkyImageReady() {
+  if (typeof CARD_DEFS === 'undefined') return;
+  CARD_DEFS.forEach((def) => { if (def.ctx) { paintCard(def); def.tex.needsUpdate = true; } });
+}
+
+
+/* ----------------------------------------------------------------------------
+   PROCEDURAL PLACEHOLDER TEXTURES — explicitly not production art.
+   Ridge texture: vertical corrugation, colour-matched to the previous CSS pass
+   (graphite navy). Mesh texture: a simple cross-hatch for the interior lining.
+   ---------------------------------------------------------------------------- */
+function makeRidgeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 256, 0);
+  grad.addColorStop(0, '#3a4066');
+  grad.addColorStop(1, '#161d34');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
+  const cycle = 16;
+  for (let x = 0; x < 256; x += cycle) {
+    const g = ctx.createLinearGradient(x, 0, x + cycle, 0);
+    g.addColorStop(0, 'rgba(0,0,0,0.42)');
+    g.addColorStop(0.28, 'rgba(0,0,0,0.12)');
+    g.addColorStop(0.5, 'rgba(255,255,255,0.22)');
+    g.addColorStop(0.72, 'rgba(255,255,255,0.03)');
+    g.addColorStop(1, 'rgba(0,0,0,0.42)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, 0, cycle, 256);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  // 1.3x, not 3x: at 3x this produced ~48 grooves across the shell width, far
+  // denser than the approved reference's visible groove pitch (measured from
+  // the reference photo: roughly 15-18 grooves across a comparable front-face
+  // width). 1.3x gives a comparable wider, sparser pitch.
+  tex.repeat.set(1.3, 1);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+function makeRidgeBump() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, 256, 256);
+  const cycle = 16;
+  for (let x = 0; x < 256; x += cycle) {
+    const g = ctx.createLinearGradient(x, 0, x + cycle, 0);
+    g.addColorStop(0, '#404040');
+    g.addColorStop(0.5, '#e0e0e0');
+    g.addColorStop(1, '#404040');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, 0, cycle, 256);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1.3, 1); // must match makeRidgeTexture's repeat so the bump aligns with the colour map
+  return tex;
+}
+function makeMeshTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1b1d27'; ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1;
+  for (let i = -128; i < 128; i += 7) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 128, 128); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(i, 128); ctx.lineTo(i + 128, 0); ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// Interior lining, drawn (not photographed): quilted charcoal fabric with the
+// pocket layout of the reference — the LID carries two stacked mesh pockets
+// with zips (image 05's left half), the BASE a strap band and a divider zip.
+// Edge darkening is baked in as cheap ambient occlusion. `bump` draws the
+// matching height map. Real photographed/scanned fabric + normal maps are
+// what production needs; this is the achievable procedural stand-in.
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+}
+function makeFabricCanvas(kind, bump) {
+  const W = 512, H = 819, k = H / 672;   // 0.625 w/h panel; layout numbers below were drawn for 672 and are scaled by k
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = bump ? '#808080' : '#15171d'; ctx.fillRect(0, 0, W, H);
+  ctx.lineWidth = bump ? 2.4 : 1.4; ctx.strokeStyle = bump ? '#3a3a3a' : 'rgba(255,255,255,0.085)';
+  for (let i = -H; i < W + H; i += 26) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(i, H); ctx.lineTo(i + H, 0); ctx.stroke();
+  }
+  const pocket = (x, y, w, h) => {
+    ctx.fillStyle = bump ? '#8e8e8e' : '#262a34'; roundRectPath(ctx, x, y, w, h, 14); ctx.fill();
+    ctx.save(); roundRectPath(ctx, x, y, w, h, 14); ctx.clip();
+    ctx.strokeStyle = bump ? '#666' : 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+    for (let i = -h; i < w + h; i += 7) {
+      ctx.beginPath(); ctx.moveTo(x + i, y); ctx.lineTo(x + i + h, y + h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + i, y + h); ctx.lineTo(x + i + h, y); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.strokeStyle = bump ? '#b0b0b0' : 'rgba(190,198,215,0.38)'; ctx.lineWidth = 3; roundRectPath(ctx, x, y, w, h, 14); ctx.stroke();
+    ctx.strokeStyle = bump ? '#d0d0d0' : 'rgba(215,222,235,0.78)'; ctx.lineWidth = 5; ctx.setLineDash([2.5, 3.5]);
+    ctx.beginPath(); ctx.moveTo(x + 18, y + 9); ctx.lineTo(x + w - 18, y + 9); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = bump ? '#e0e0e0' : 'rgba(228,233,242,0.92)'; roundRectPath(ctx, x + w * 0.7, y + 2, 20, 13, 4); ctx.fill();
+  };
+  if (kind === 'lid') { pocket(40, 52 * k, 432, 250 * k); pocket(40, 344 * k, 432, 268 * k); }
+  else {
+    ctx.fillStyle = bump ? '#9a9a9a' : '#2a2d36'; ctx.fillRect(0, 372 * k, W, 44 * k);
+    ctx.strokeStyle = bump ? '#c8c8c8' : 'rgba(215,222,235,0.5)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(0, 378 * k); ctx.lineTo(W, 378 * k); ctx.moveTo(0, 410 * k); ctx.lineTo(W, 410 * k); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = bump ? '#d0d0d0' : 'rgba(215,222,235,0.6)'; ctx.lineWidth = 4; ctx.setLineDash([2.5, 3.5]);
+    ctx.beginPath(); ctx.moveTo(30, 566 * k); ctx.lineTo(W - 30, 566 * k); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (!bump) {
+    const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.22, W / 2, H / 2, H * 0.72);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.62)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  }
+  return c;
+}
+function makeFabricTex(canvas, srgb) {
+  const t = new THREE.CanvasTexture(canvas);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return t;
+}
+
+const ridgeMap = makeRidgeTexture();
+const ridgeBump = makeRidgeBump();
+const meshMap = makeMeshTexture();
+
+// CARD ART — luminous blue glass, matching image 05's cards: a vertical blue
+// gradient (deeper at the top, paler below), the approved cloud photograph
+// showing through the lower half, a soft sheen, a thin white-to-cyan edge
+// with a restrained outer glow, a spaced English label and a white line icon.
+// The Japanese description is deliberately NOT on the artwork (the reference
+// cards carry only the English label + icon): it stays in the link's
+// aria-label / hidden text and in the destination sections' headings.
+// Drawn in a logical 260x380 space at 2x density. The visible card BODY is
+// inset by CARD_TEX_PAD so the glow has room; layout sizes the BODY (see
+// CARD_PLANE_OVER_BODY). Body aspect 236:356 = 0.663 — the references' cards
+// run 0.66-0.71. Cloud crops per card are different regions of the photo.
+const CARD_TEX_W = 260, CARD_TEX_H = 380, CARD_TEX_PAD = 12, CARD_TEX_R = 30, CARD_TEX_SCALE = 2;
+const CARD_BODY_W = CARD_TEX_W - 2 * CARD_TEX_PAD, CARD_BODY_H = CARD_TEX_H - 2 * CARD_TEX_PAD;
+const CARD_PLANE_OVER_BODY = CARD_TEX_W / CARD_BODY_W;
+const CARD_BODY_ASPECT = CARD_BODY_W / CARD_BODY_H;
+const CARD_CLOUD_CROPS = [[140, 1000], [430, 1080], [60, 1200], [330, 1240], [520, 1120], [180, 1400]];
+function fitFont(ctx, text, weight, startPx, maxWidth) {
+  let px = startPx;
+  ctx.font = `${weight} ${px}px system-ui, -apple-system, "Helvetica Neue", sans-serif`;
+  while (px > 8 && ctx.measureText(text).width > maxWidth) {
+    px -= 1;
+    ctx.font = `${weight} ${px}px system-ui, -apple-system, "Helvetica Neue", sans-serif`;
+  }
+  return px;
+}
+function paintCard(def) {
+  const ctx = def.ctx, w = CARD_TEX_W, h = CARD_TEX_H, P = CARD_TEX_PAD, bw = CARD_BODY_W, bh = CARD_BODY_H, r = CARD_TEX_R;
+  ctx.setTransform(CARD_TEX_SCALE, 0, 0, CARD_TEX_SCALE, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  // soft outer glow (restrained)
+  ctx.save();
+  ctx.shadowColor = 'rgba(120,212,255,0.55)'; ctx.shadowBlur = 13;
+  ctx.fillStyle = 'rgba(50,140,255,0.9)'; roundRectPath(ctx, P, P, bw, bh, r); ctx.fill();
+  ctx.restore();
+  // glass body
+  ctx.save();
+  roundRectPath(ctx, P, P, bw, bh, r); ctx.clip();
+  const g = ctx.createLinearGradient(0, P, 0, P + bh);
+  g.addColorStop(0, '#1656e8'); g.addColorStop(0.45, '#2f86f6'); g.addColorStop(1, '#4fa4fb');
+  ctx.fillStyle = g; ctx.fillRect(P, P, bw, bh);
+  // approved cloud photograph, showing through the lower half
+  if (skyImg.complete && skyImg.naturalWidth) {
+    const dh = Math.round(bh * 0.52), dy = P + bh - dh;
+    const tmp = document.createElement('canvas');
+    tmp.width = bw * CARD_TEX_SCALE; tmp.height = dh * CARD_TEX_SCALE;
+    const t = tmp.getContext('2d');
+    const [sx, sy] = CARD_CLOUD_CROPS[def.index];
+    const sw = 560, sh = Math.round(sw * dh / bw);
+    t.drawImage(skyImg, sx, sy, sw, sh, 0, 0, tmp.width, tmp.height);
+    // SOFT composite of the cloud over the glass, preserving the photo's own
+    // shading (the earlier key remapped every pixel to a two-tone white/blue
+    // ramp, which produced solid white areas and a visible band):
+    //  1. coverage from the red channel (the photo's sky has ~0 red) through a
+    //     WIDE smoothstep, so shaded cloud stays partly translucent and the
+    //     blue glass shows through it rather than the cloud going flat white;
+    //  2. the photo's sky is UN-MIXED from partially covered pixels
+    //     (C = (P - (1-a)*S)/a), so cloud edges carry no dark-blue fringe;
+    //  3. grading keeps the source detail: shadows are nudged toward pale sky
+    //     blue in proportion to their darkness, and only the top of the range
+    //     is eased (a soft knee) so lit tops keep their texture instead of
+    //     clipping to 255;
+    //  4. a long smoothstep fade brings the clouds up out of the glass with no
+    //     hard row where they begin.
+    // One small getImageData per card, once at load.
+    const img = t.getImageData(0, 0, tmp.width, tmp.height), px = img.data;
+    const SKY = [0, 45, 140];
+    for (let y = 0; y < tmp.height; y++) {
+      let f = Math.min(1, Math.max(0, y / (tmp.height * 0.62)));
+      f = f * f * (3 - 2 * f);
+      for (let x = 0; x < tmp.width; x++) {
+        const i = (y * tmp.width + x) * 4;
+        let a = Math.min(1, Math.max(0, (px[i] - 10) / 120)); a = a * a * (3 - 2 * a);
+        const inv = 1 / Math.max(a, 0.25);
+        let R = Math.min(1, Math.max(0, (px[i] - (1 - a) * SKY[0]) * inv / 255));
+        let G = Math.min(1, Math.max(0, (px[i + 1] - (1 - a) * SKY[1]) * inv / 255));
+        let B = Math.min(1, Math.max(0, (px[i + 2] - (1 - a) * SKY[2]) * inv / 255));
+        R = Math.pow(R, 0.82); G = Math.pow(G, 0.82); B = Math.pow(B, 0.82);   // lift mid-tones; whites stay bounded by the knee below
+        const lum = 0.3 * R + 0.59 * G + 0.11 * B;
+        const sh = (1 - lum) * 0.5;                                           // the photo's shadows are lavender-grey: steer them toward sky blue
+        R += (0.56 - R) * sh; G += (0.75 - G) * sh; B += (1.0 - B) * sh;
+        const knee = Math.max(0, (lum - 0.84) / 0.16) * 0.09;
+        const k = 1.04 - knee;
+        px[i] = Math.min(255, R * k * 255); px[i + 1] = Math.min(255, G * k * 255); px[i + 2] = Math.min(255, B * k * 255);
+        px[i + 3] = 255 * a * f * 0.98;
+      }
+    }
+    t.putImageData(img, 0, 0);
+    ctx.drawImage(tmp, P, dy, bw, dh);
+  }
+  // glass sheen
+  const sh2 = ctx.createLinearGradient(P, P, P + bw * 0.6, P + bh * 0.7);
+  sh2.addColorStop(0, 'rgba(255,255,255,0.26)'); sh2.addColorStop(0.85, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sh2; ctx.fillRect(P, P, bw, bh);   // whole body: the gradient itself ends at 0, so no rectangle edge shows
+  ctx.restore();
+  // thin white -> cyan edge
+  const eg = ctx.createLinearGradient(P, P, P + bw, P + bh);
+  eg.addColorStop(0, 'rgba(255,255,255,0.98)'); eg.addColorStop(0.55, 'rgba(190,240,255,0.92)'); eg.addColorStop(1, 'rgba(120,225,255,0.95)');
+  ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(140,225,255,0.22)'; roundRectPath(ctx, P, P, bw, bh, r); ctx.stroke();
+  ctx.lineWidth = 2.4; ctx.strokeStyle = eg; roundRectPath(ctx, P + 0.6, P + 0.6, bw - 1.2, bh - 1.2, r - 0.6); ctx.stroke();
+  // English label (letter-spaced caps) + white line icon
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = 'rgba(0,50,140,0.4)'; ctx.shadowBlur = 4;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '3px';
+  fitFont(ctx, def.label, '600', 27, bw * 0.84);
+  ctx.fillText(def.label, w / 2 + 1.5, P + bh * 0.125);
+  ctx.restore();
+  ctx.save();
+  ctx.translate(w / 2, P + bh * 0.31); ctx.scale(1.25, 1.25);
+  ctx.strokeStyle = '#ffffff'; ctx.fillStyle = '#ffffff'; ctx.lineWidth = 3.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(0,50,140,0.35)'; ctx.shadowBlur = 3;
+  def.icon(ctx);
+  ctx.restore();
+}
+function makeCardCanvas(def) {
+  const c = document.createElement('canvas');
+  c.width = CARD_TEX_W * CARD_TEX_SCALE; c.height = CARD_TEX_H * CARD_TEX_SCALE;
+  def.canvas = c; def.ctx = c.getContext('2d');
+  paintCard(def);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  def.tex = tex;
+  return tex;
+}
+function drawServiceIcon(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-30, 20); ctx.lineTo(30, -18); ctx.lineTo(6, 20); ctx.lineTo(-2, 4); ctx.closePath();
+  ctx.stroke();
+}
+function drawPlanIcon(ctx) {
+  ctx.strokeRect(-26, -20, 52, 44);
+  ctx.beginPath(); ctx.moveTo(-26, -6); ctx.lineTo(26, -6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(-12, -28); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12, -20); ctx.lineTo(12, -28); ctx.stroke();
+}
+function drawCampaignIcon(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-28, -6); ctx.lineTo(6, -28); ctx.lineTo(28, -6); ctx.lineTo(28, 8); ctx.lineTo(-6, 28); ctx.lineTo(-28, 8); ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(10, -12, 5, 0, Math.PI * 2); ctx.stroke();
+}
+function drawReviewIcon(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-28, -18); ctx.lineTo(28, -18); ctx.lineTo(28, 10); ctx.lineTo(-4, 10); ctx.lineTo(-14, 24); ctx.lineTo(-14, 10); ctx.lineTo(-28, 10); ctx.closePath();
+  ctx.stroke();
+}
+function drawProfileIcon(ctx) {
+  ctx.beginPath(); ctx.arc(0, -10, 12, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 34, 24, Math.PI, Math.PI * 2); ctx.stroke();
+}
+function drawFaqIcon(ctx) {
+  ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.stroke();
+  ctx.font = 'bold 34px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('?', 1, 3);
+}
+
+// DoubleSide on the shell-facing materials: this is real hollow geometry (a
+// tray with only 5 faces, open on one side), so the same physical wall is
+// legitimately viewed from its outward side (closed state) and its inward
+// side (open state) depending on scroll progress — not two different meshes,
+// the SAME triangles, so both sides must render rather than being culled.
+// Exterior: dark GRAPHITE (the approved centre case is graphite/black — the old
+// navy stripe texture read blue) with real raised RIBS (geometry, below), so
+// the ribbing catches light and shows in silhouette rather than being a
+// painted stripe.
+const exteriorMat = new THREE.MeshStandardMaterial({ color: 0x14171c, roughness: 0.24, metalness: 0.85, envMapIntensity: 2.3, side: THREE.DoubleSide });
+const ribMat = new THREE.MeshStandardMaterial({ color: 0x20242c, roughness: 0.2, metalness: 0.9, envMapIntensity: 2.6 });
+const cornerGuardMat = new THREE.MeshStandardMaterial({ color: 0x6a707d, metalness: 1.0, roughness: 0.26, envMapIntensity: 2.0 });
+const interiorFloorMat = new THREE.MeshStandardMaterial({ color: 0x16171f, roughness: 0.9, metalness: 0.02, side: THREE.DoubleSide });
+// Fabric: sheen tinted with the sky gives the cloth its soft blue rim light.
+const fabricMat = (map, bump) => new THREE.MeshPhysicalMaterial({
+  map, bumpMap: bump, bumpScale: 1.2, roughness: 0.84, metalness: 0,
+  sheen: 1.0, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x7fb0ff), envMapIntensity: 0.6, side: THREE.DoubleSide,
+});
+const fabricBaseMat = fabricMat(makeFabricTex(makeFabricCanvas('base', false), true), makeFabricTex(makeFabricCanvas('base', true), false));
+const fabricLidMat = fabricMat(makeFabricTex(makeFabricCanvas('lid', false), true), makeFabricTex(makeFabricCanvas('lid', true), false));
+const linerMat = new THREE.MeshPhysicalMaterial({
+  color: 0x101218, roughness: 0.9, metalness: 0, sheen: 1.0, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x6fa2ff), side: THREE.DoubleSide,
+});
+// Brushed-aluminium frame: full metal, fairly smooth, strongly reflecting the
+// sky/cloud environment — this is what carries the bright edge highlights of
+// the reference (frame ring, hinge barrel).
+const frameMat = new THREE.MeshStandardMaterial({ color: 0x6d7480, metalness: 1.0, roughness: 0.18, envMapIntensity: 2.6, side: THREE.DoubleSide });
+const wheelDarkMat = new THREE.MeshStandardMaterial({ color: 0x101114, roughness: 0.5, metalness: 0.4 });
+const wheelHubMat = new THREE.MeshStandardMaterial({ color: 0x454955, roughness: 0.4, metalness: 0.6 });
+const handleMat = new THREE.MeshStandardMaterial({ color: 0x1c1d24, roughness: 0.5, metalness: 0.3 });
+const latchMat = new THREE.MeshStandardMaterial({ color: 0xcfd3da, roughness: 0.35, metalness: 0.7 });
+
+/* ----------------------------------------------------------------------------
+   GEOMETRY — real hollow trays, not flat planes.
+   Each shell = rounded-rect extruded skin (the exterior, with real thickness)
+   + 4 simple wall boxes completing the cavity depth to the opening plane
+   + interior floor plane (the extrude's own back cap, distinct material)
+   + wheel modules + (base only) handle + latch.
+   Coordinate convention per shell-local space: opening faces local +Z,
+   exterior skin sits at local Z = -shellDepth (before any group-level flip).
+   ---------------------------------------------------------------------------- */
+const CASE_W = 2.6;
+const CASE_H = CASE_W * 1.6;            // was 340/260 (0.765 w/h): reference shells are ~0.5-0.6, the old ratio read squat
+const SHELL_DEPTH = CASE_W * 0.16;      // each shell's own depth; combined closed thickness = 2x this (matches the ratio validated in the CSS pass)
+const SKIN_THICKNESS = SHELL_DEPTH * 0.18;   // was 0.32: a thinner "skin" leaves a deeper cavity between the frame mouth and the fabric floor, so the open interior actually reads as a recessed tray instead of a near-flush panel
+const CORNER_RADIUS = CASE_W * 0.07;
+
+function roundedRectShape(w, h, r) {
+  const shape = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  shape.moveTo(x + r, y);
+  shape.lineTo(x + w - r, y);
+  shape.quadraticCurveTo(x + w, y, x + w, y + r);
+  shape.lineTo(x + w, y + h - r);
+  shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  shape.lineTo(x + r, y + h);
+  shape.quadraticCurveTo(x, y + h, x, y + h - r);
+  shape.lineTo(x, y + r);
+  shape.quadraticCurveTo(x, y, x + r, y);
+  return shape;
+}
+
+// A raised bevelled rim around the shell's perimeter — a ring shape (outer
+// rounded rect with a slightly smaller rounded rect cut out as a hole),
+// extruded with a real bevel. Sits proud of the flat exterior panel by a
+// hair, giving the shell edge actual 3D form instead of a flat painted-on
+// outline. Placeholder proportions, not measured off the reference photo.
+function buildBevelRim(w, h, r, rimWidth, depth) {
+  const outer = roundedRectShape(w, h, r);
+  const inner = roundedRectShape(w - rimWidth * 2, h - rimWidth * 2, Math.max(r - rimWidth, 0.01));
+  outer.holes.push(inner);
+  const geo = new THREE.ExtrudeGeometry(outer, {
+    depth, bevelEnabled: true, bevelThickness: depth * 0.4, bevelSize: rimWidth * 0.3, bevelSegments: 3, curveSegments: 12,
+  });
+  return geo;
+}
+
+// A raised rib: rounded-rect profile, extruded with a bevel. Extrudes toward
+// +Z from about z=-0.014; callers rotate/position it onto a panel face.
+// A near-fully-rounded rib profile: the bevel eats almost the whole flat
+// top, so the rib reads as a rounded corrugation (bright center streak,
+// shaded shoulders) rather than a flat plateau with a thin rounded edge —
+// what actually sells the reference's deep, glossy grooves. Used for the
+// CENTRE case only: on the light silver side case this much curvature under
+// the sky reflection blows the ribs out to near-white, losing the groove
+// definition, so the side cases keep the flatter original profile.
+function makeRibGeometry(w, h, rounded = true) {
+  return rounded
+    ? new THREE.ExtrudeGeometry(roundedRectShape(w, h, w * 0.45), {
+        depth: 0.016, bevelEnabled: true, bevelThickness: 0.05, bevelSize: w * 0.42, bevelSegments: 10, curveSegments: 10,
+      })
+    : new THREE.ExtrudeGeometry(roundedRectShape(w, h, w * 0.45), {
+        depth: 0.035, bevelEnabled: true, bevelThickness: 0.014, bevelSize: 0.012, bevelSegments: 3, curveSegments: 8,
+      });
+}
+// Broad ribs with NARROW grooves between them: real ribbed shells read as
+// grooved surfaces; thin slats on a dark plate read as a radiator grille.
+const ribGeoCase = makeRibGeometry(0.155, CASE_H * 0.86, true);
+const ribGeoSide = makeRibGeometry(0.215, CASE_H * 0.86, false);
+
+// A directional tonal gradient for the exterior plate: darker toward the
+// lower-left, lighter/cooler toward the upper-right where the key light and
+// sky sun sit. A flat single colour under the PMREM sky reflection alone
+// read as a uniform grey slab; this is what the reference's smooth graphite
+// polish actually shows even between the ribs.  Procedural canvas, same
+// technique as the fabric/card textures elsewhere in this file — no new
+// external asset.
+function makeExteriorGradientMap() {
+  const W = 256, H = Math.round(W * (CASE_H / CASE_W));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(W * 0.05, H * 0.95, W * 0.95, H * 0.05);
+  g.addColorStop(0, '#0a0b0e');
+  g.addColorStop(0.45, '#181b22');
+  g.addColorStop(0.78, '#333944');
+  g.addColorStop(1, '#4c5462');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // soft vignette so the very edges stay dark and let the frame read as the
+  // brightest metal in the shot
+  const v = ctx.createRadialGradient(W * 0.68, H * 0.22, H * 0.05, W * 0.5, H * 0.5, H * 0.85);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+exteriorMat.map = makeExteriorGradientMap();
+exteriorMat.color.set(0xffffff);
+exteriorMat.needsUpdate = true;
+function addRibs(group, geo, mat, count, spread, zBase, outward) {
+  for (let i = 0; i < count; i++) {
+    const rib = new THREE.Mesh(geo, mat);
+    rib.position.set(lerp(-1, 1, i / (count - 1)) * spread, 0, zBase + outward * 0.014);
+    if (outward < 0) rib.rotation.y = Math.PI;
+    group.add(rib);
+  }
+}
+
+function buildWheelModule() {
+  const g = new THREE.Group();
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.16), wheelDarkMat);
+  housing.position.y = 0.05;
+  g.add(housing);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.06, 8), wheelDarkMat);
+  stem.position.y = 0.005;
+  g.add(stem);
+  for (const dz of [-0.05, 0.05]) {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.035, 16), wheelDarkMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(0, -0.06, dz);
+    g.add(wheel);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 12), wheelHubMat);
+    hub.rotation.z = Math.PI / 2;
+    hub.position.set(0, -0.06, dz);
+    g.add(hub);
+  }
+  return g;
+}
+
+function buildHandle() {
+  const g = new THREE.Group();
+  const barLen = CASE_W * 0.32;
+  const bar = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, barLen, 4, 8), handleMat);
+  bar.rotation.z = Math.PI / 2;
+  bar.position.y = 0.28;
+  g.add(bar);
+  for (const dx of [-barLen / 2, barLen / 2]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8), handleMat);
+    post.position.set(dx, 0.13, 0);
+    g.add(post);
+  }
+  return g;
+}
+
+// Builds one shell (base or lid) as a real hollow tray:
+//  - a ridged exterior back plate,
+//  - a fabric-lined interior floor with the reference's pocket layout,
+//  - a ROUNDED aluminium frame ring (extruded from the rounded-rect outline, so
+//    the corners are truly rounded in depth, with a bevelled, light-catching
+//    edge) running from the back plate to the mouth,
+//  - a thin fabric liner sleeve lining the frame's inner walls.
+// Two explicit single-material meshes for plate and floor (not one multi-
+// material extrusion: face-group order under DoubleSide was verified
+// unreliable), each at an explicit local Z; depth testing decides what shows.
+// Local convention: the opening faces +Z; the plate sits at Z = -SHELL_DEPTH.
+// For the lid, the caller's one 180deg group rotation brings the exterior to
+// face the camera when closed (a second flip of these Z values was an earlier bug).
+// A small rounded corner protector, glued to the plate near each of the 4
+// corners just inside the frame — the reference's closed shell has a visibly
+// separate, lighter hardware piece at each corner rather than a bare rounded
+// edge. Same extrude-with-bevel technique as the ribs, just square.
+function makeCornerGuardGeo() {
+  const size = CORNER_RADIUS * 1.4;
+  return new THREE.ExtrudeGeometry(roundedRectShape(size, size, size * 0.4), {
+    depth: 0.03, bevelEnabled: true, bevelThickness: 0.013, bevelSize: 0.011, bevelSegments: 4, curveSegments: 10,
+  });
+}
+const cornerGuardGeo = makeCornerGuardGeo();
+function addCornerGuards(group, zBase, outward) {
+  const pad = CORNER_RADIUS * 1.05;
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const guard = new THREE.Mesh(cornerGuardGeo, cornerGuardMat);
+    guard.position.set(sx * (CASE_W / 2 - pad), sy * (CASE_H / 2 - pad), zBase + outward * 0.014);
+    if (outward < 0) guard.rotation.y = Math.PI;
+    group.add(guard);
+  }
+}
+// Twin latch hardware near the non-hinge edge (local +X in every shell's own
+// space maps to "away from the hinge" for both base and lid — see the wheel
+// placement above, which relies on the same convention). Sits proud of the
+// ribs, recessed under the frame, matching the reference's paired latches.
+function addLatches(group, zBase, outward) {
+  const x = CASE_W / 2 - CORNER_RADIUS * 2.1;
+  for (const y of [CASE_H * 0.085, -CASE_H * 0.055]) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.13, 0.03), latchMat);
+    m.position.set(x, y, zBase + outward * 0.015);
+    group.add(m);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   INTERIOR HARDWARE — real extruded panels standing proud of the fabric
+   floor, not flat texture rectangles. The mesh-pocket crosshatch reuses
+   `meshMap` (built earlier, previously unused); the trim/zip-pull hardware
+   reuses `latchMat`'s light metal tone. Positions are authored as fractions
+   of the floor's own (u,v) — the same 0..1 space floorGeo's UVs already use
+   (see buildShell) — so they line up with the drawn pocket outlines on the
+   fabric texture underneath.
+   ---------------------------------------------------------------------------- */
+const pocketMat = new THREE.MeshPhysicalMaterial({
+  map: meshMap, color: 0x9199aa, roughness: 0.7, metalness: 0.08,
+  sheen: 0.7, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x8fb4ff), side: THREE.DoubleSide,
+});
+const trimMat = new THREE.MeshStandardMaterial({ color: 0xd7dce6, roughness: 0.4, metalness: 0.55 });
+function addPocket(group, innerW, innerH, floorZ, u0, v0, u1, v1, depth) {
+  const w = (u1 - u0) * innerW, h = (v1 - v0) * innerH;
+  const cx = ((u0 + u1) / 2 - 0.5) * innerW, cy = ((v0 + v1) / 2 - 0.5) * innerH;
+  const r = Math.min(w, h) * 0.1;
+  const geo = new THREE.ExtrudeGeometry(roundedRectShape(w, h, r), {
+    depth, bevelEnabled: true, bevelThickness: depth * 0.4, bevelSize: r * 0.45, bevelSegments: 5, curveSegments: 10,
+  });
+  const pos = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, ((pos.getX(i) + w / 2) / w) * 2.4, ((pos.getY(i) + h / 2) / h) * 3.4);
+  const mesh = new THREE.Mesh(geo, pocketMat);
+  mesh.position.set(cx, cy, floorZ);
+  group.add(mesh);
+  const trimGeo = new THREE.EdgesGeometry(new THREE.ShapeGeometry(roundedRectShape(w * 0.985, h * 0.985, r)));
+  const trim = new THREE.LineSegments(trimGeo, new THREE.LineBasicMaterial({ color: 0xd7dce6, transparent: true, opacity: 0.8 }));
+  trim.position.set(cx, cy, floorZ + depth + 0.003);
+  trim.raycast = () => {};   // cosmetic outline only — THREE's default Line pick threshold is huge relative to this scene, see stitch below
+  group.add(trim);
+  const pull = new THREE.Mesh(new THREE.BoxGeometry(w * 0.1, h * 0.032, 0.014), trimMat);
+  pull.position.set(cx + w * 0.26, cy + h / 2 - h * 0.02, floorZ + depth + 0.008);
+  group.add(pull);
+}
+// A cross-body strap with a buckle, standing proud of the base floor —
+// the reference's base half carries a divider strap rather than pockets.
+function addStrap(group, innerW, innerH, floorZ, v0, v1, depth) {
+  const w = innerW * 0.92, h = (v1 - v0) * innerH;
+  const cy = ((v0 + v1) / 2 - 0.5) * innerH;
+  const geo = new THREE.BoxGeometry(w, h, depth);
+  const strap = new THREE.Mesh(geo, pocketMat);
+  strap.position.set(0, cy, floorZ + depth / 2);
+  group.add(strap);
+  const stitchGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(w * 0.99, h * 0.7, 0.001));
+  const stitch = new THREE.LineSegments(stitchGeo, new THREE.LineBasicMaterial({ color: 0xd7dce6, transparent: true, opacity: 0.6 }));
+  stitch.position.set(0, cy, floorZ + depth + 0.002);
+  stitch.raycast = () => {};   // cosmetic outline only — a LineSegments hit test uses a large world-space threshold by default and was registering as false "suitcase" picks over open sky (caught by __verifyPicking)
+  group.add(stitch);
+  const buckle = new THREE.Mesh(new THREE.BoxGeometry(w * 0.1, h * 1.5, depth * 1.6), trimMat);
+  buckle.position.set(0, cy, floorZ + depth * 0.8);
+  group.add(buckle);
+}
+// Small hardware brackets at the frame's inner corners, facing the mouth —
+// visible once the case is open, the interior equivalent of the exterior
+// corner guards.
+function addInteriorCornerBrackets(group, innerW, innerH, z) {
+  const size = CORNER_RADIUS * 0.75;
+  const geo = new THREE.ExtrudeGeometry(roundedRectShape(size, size, size * 0.4), {
+    depth: 0.018, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.007, bevelSegments: 3, curveSegments: 8,
+  });
+  const pad = CORNER_RADIUS * 0.7;
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const m = new THREE.Mesh(geo, trimMat);
+    m.position.set(sx * (innerW / 2 - pad), sy * (innerH / 2 - pad), z);
+    group.add(m);
+  }
+}
+
+function buildShell(kind) {
+  const group = new THREE.Group();
+  const innerW = CASE_W * 0.9, innerH = CASE_H * 0.9, innerR = CORNER_RADIUS * 0.85;
+
+  const exteriorPanel = new THREE.Mesh(new THREE.ShapeGeometry(roundedRectShape(CASE_W, CASE_H, CORNER_RADIUS), 12), exteriorMat);
+  exteriorPanel.position.z = -SHELL_DEPTH;
+
+  const floorGeo = new THREE.ShapeGeometry(roundedRectShape(innerW, innerH, innerR), 12);
+  const fp = floorGeo.attributes.position, fu = floorGeo.attributes.uv;
+  for (let i = 0; i < fp.count; i++) fu.setXY(i, (fp.getX(i) + innerW / 2) / innerW, (fp.getY(i) + innerH / 2) / innerH);
+  const interiorPanel = new THREE.Mesh(floorGeo, kind === 'lid' ? fabricLidMat : fabricBaseMat);
+  const floorZ = -(SHELL_DEPTH - SKIN_THICKNESS);
+  interiorPanel.position.z = floorZ;
+  group.add(exteriorPanel, interiorPanel);
+  addRibs(group, ribGeoCase, ribMat, 13, CASE_W * 0.38, -SHELL_DEPTH, -1);
+  addCornerGuards(group, -SHELL_DEPTH, -1);
+  addLatches(group, -SHELL_DEPTH, -1);
+  addInteriorCornerBrackets(group, innerW, innerH, floorZ + 0.05);
+  if (kind === 'lid') {
+    addPocket(group, innerW, innerH, floorZ, 0.078, 0.631, 0.922, 0.936, 0.06);
+    addPocket(group, innerW, innerH, floorZ, 0.078, 0.252, 0.922, 0.58, 0.06);
+  } else {
+    addStrap(group, innerW, innerH, floorZ, 0.381, 0.446, 0.045);
+  }
+
+  const ring = roundedRectShape(CASE_W, CASE_H, CORNER_RADIUS);
+  ring.holes.push(roundedRectShape(innerW, innerH, innerR));
+  const frame = new THREE.Mesh(new THREE.ExtrudeGeometry(ring, {
+    depth: SHELL_DEPTH - 0.03, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.018, bevelSegments: 4, curveSegments: 14,
+  }), frameMat);
+  frame.position.z = -SHELL_DEPTH + 0.02;
+  group.add(frame);
+
+  const sleeve = roundedRectShape(innerW - 0.004, innerH - 0.004, innerR);
+  sleeve.holes.push(roundedRectShape(innerW - 0.06, innerH - 0.06, innerR * 0.85));
+  const liner = new THREE.Mesh(new THREE.ExtrudeGeometry(sleeve, { depth: SHELL_DEPTH - SKIN_THICKNESS - 0.012, bevelEnabled: false, curveSegments: 12 }), linerMat);
+  liner.position.z = -(SHELL_DEPTH - SKIN_THICKNESS);
+  group.add(liner);
+
+  return group;
+}
+
+/* ----------------------------------------------------------------------------
+   ASSEMBLE: fallGroup -> baseGroup (static) + lidPivot -> lidGroup (rotates)
+   ---------------------------------------------------------------------------- */
+const fallGroup = new THREE.Group();
+scene.add(fallGroup);
+
+// BASE — the back half, does not rotate. Its local +Z (opening) faces world +Z.
+const baseShell = buildShell('base');
+baseShell.position.z = 0; // opening at world Z=0 (the seam)
+fallGroup.add(baseShell);
+
+const baseWheelL = buildWheelModule();
+baseWheelL.position.set(-CASE_W * 0.32, -CASE_H / 2 - 0.02, -SHELL_DEPTH * 0.5);
+baseShell.add(baseWheelL);
+const baseWheelR = buildWheelModule();
+baseWheelR.position.set(CASE_W * 0.32, -CASE_H / 2 - 0.02, -SHELL_DEPTH * 0.5);
+baseShell.add(baseWheelR);
+
+const handle = buildHandle();
+handle.position.set(0, CASE_H / 2 + 0.05, -SHELL_DEPTH * 0.6);
+baseShell.add(handle);
+
+// Sun glint: a small additive four-point star on the base frame's upper-right
+// corner, the same side the sun is on (image 05 has this sparkle at exactly
+// that corner). A sprite, depth-tested, so the closed lid hides it until the
+// case opens.
+const glintCanvas = document.createElement('canvas');
+glintCanvas.width = glintCanvas.height = 128;
+{
+  const g = glintCanvas.getContext('2d');
+  const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(0.12, 'rgba(255,250,235,0.85)'); rg.addColorStop(0.4, 'rgba(255,245,220,0.18)'); rg.addColorStop(1, 'rgba(255,245,220,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+  g.globalCompositeOperation = 'lighter';
+  for (const [w, h] of [[128, 5], [5, 128]]) {
+    const lg = g.createLinearGradient(0, 0, w > h ? 128 : 0, w > h ? 0 : 128);
+    lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, 'rgba(255,255,255,0.95)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = lg; g.fillRect(64 - w / 2, 64 - h / 2, w, h);
+  }
+}
+const glint = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: new THREE.CanvasTexture(glintCanvas), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.9,
+}));
+glint.raycast = () => {};   // a light effect, never a pick target
+glint.scale.set(0.75, 0.75, 1);
+glint.position.set(CASE_W / 2 - 0.02, CASE_H / 2 - 0.02, 0.03);
+baseShell.add(glint);
+
+// Hinge barrel along the real hinge line (the lid pivots on exactly this
+// axis): a polished aluminium cylinder with two blocks, so the attachment
+// reads as hardware rather than as two shells that merely touch.
+const hingeBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, CASE_H * 0.9, 20), frameMat);
+hingeBarrel.position.set(-CASE_W / 2, 0, -0.005);
+baseShell.add(hingeBarrel);
+for (const y of [CASE_H * 0.3, -CASE_H * 0.3]) {
+  const block = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.34, 0.09), frameMat);
+  block.position.set(-CASE_W / 2, y, -0.01);
+  baseShell.add(block);
+}
+
+// LID — the front half, the ONLY rotating part. Hinge line is the vertical
+// edge at local X = -CASE_W/2 of the seam plane (world X=-CASE_W/2, Z=0).
+// lidPivot sits exactly on that hinge line; lidShell is offset back by +W/2 in
+// its local space so rotating lidPivot swings the shell around the true edge
+// (same technique as `transform-origin: left center` in the CSS version).
+const lidPivot = new THREE.Group();
+lidPivot.position.set(-CASE_W / 2, 0, 0);
+fallGroup.add(lidPivot);
+
+const lidShell = buildShell('lid');
+// Flip 180 deg so the shell's exterior (local -Z) faces world +Z (toward camera
+// when closed) and its opening (local +Z) faces world -Z (toward the base/seam).
+lidShell.rotation.y = Math.PI;
+lidShell.position.x = CASE_W / 2; // undo the pivot's local offset within lidPivot's space
+lidPivot.add(lidShell);
+
+const lidWheelL = buildWheelModule();
+lidWheelL.position.set(-CASE_W * 0.32, -CASE_H / 2 - 0.02, -SHELL_DEPTH * 0.5);
+lidShell.add(lidWheelL);
+const lidWheelR = buildWheelModule();
+lidWheelR.position.set(CASE_W * 0.32, -CASE_H / 2 - 0.02, -SHELL_DEPTH * 0.5);
+lidShell.add(lidWheelR);
+
+/* ----------------------------------------------------------------------------
+   SIDE SUITCASES (silver, light blue) — closed, non-opening, but real
+   VOLUMES built the way the centre case is: a rounded, bevelled body with real
+   thickness, raised ribs on BOTH faces, a metal seam band where the two
+   shells meet, a top handle and four wheels. (The earlier version was two flat
+   panels and a rim, which read as cardboard cut-outs.) Their placement, size
+   and floating angle come from OPEN_LAYOUTS (image 01), solved in
+   solveOpenLayout(); they rise out of frame during the fall (see render()).
+   ---------------------------------------------------------------------------- */
+const SIDE_STYLES = {
+  silver: {
+    body: new THREE.MeshStandardMaterial({ color: 0xc9ced7, metalness: 0.9, roughness: 0.3, envMapIntensity: 1.6 }),
+    rib: new THREE.MeshStandardMaterial({ color: 0xe6eaf0, metalness: 0.95, roughness: 0.22, envMapIntensity: 1.8 }),
+    seam: new THREE.MeshStandardMaterial({ color: 0xa9afbb, metalness: 1.0, roughness: 0.28, envMapIntensity: 1.7 }),
+  },
+  blue: {
+    body: new THREE.MeshStandardMaterial({ color: 0x4a8fdd, metalness: 0.62, roughness: 0.28, envMapIntensity: 1.5 }),
+    rib: new THREE.MeshStandardMaterial({ color: 0x78b3f3, metalness: 0.7, roughness: 0.24, envMapIntensity: 1.7 }),
+    seam: new THREE.MeshStandardMaterial({ color: 0x9cb9dc, metalness: 1.0, roughness: 0.3, envMapIntensity: 1.6 }),
+  },
+};
+function buildClosedCase(style) {
+  const g = new THREE.Group();
+  const W = CASE_W, H = CASE_H, T = SHELL_DEPTH * 2, R = CORNER_RADIUS;
+  const bodyDepth = T - 0.10;
+  const bodyGeo = new THREE.ExtrudeGeometry(roundedRectShape(W, H, R), {
+    depth: bodyDepth, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.045, bevelSegments: 5, curveSegments: 14,
+  });
+  bodyGeo.translate(0, 0, -bodyDepth / 2);
+  g.add(new THREE.Mesh(bodyGeo, style.body));
+  addRibs(g, ribGeoSide, style.rib, 9, W * 0.38, T / 2, 1);
+  addRibs(g, ribGeoSide, style.rib, 9, W * 0.38, -T / 2, -1);
+  const seamShape = roundedRectShape(W + 0.07, H + 0.07, R);
+  seamShape.holes.push(roundedRectShape(W - 0.04, H - 0.04, R * 0.9));
+  const seamGeo = new THREE.ExtrudeGeometry(seamShape, { depth: 0.07, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 3, curveSegments: 14 });
+  seamGeo.translate(0, 0, -0.035);
+  g.add(new THREE.Mesh(seamGeo, style.seam));
+  const handleG = buildHandle();
+  handleG.position.set(0, H / 2 + 0.05, -T * 0.05);
+  g.add(handleG);
+  for (const dx of [-W * 0.32, W * 0.32]) for (const dz of [-T * 0.26, T * 0.26]) {
+    const wh = buildWheelModule();
+    wh.position.set(dx, -H / 2 - 0.02, dz);
+    g.add(wh);
+  }
+  return g;
+}
+const sideCaseL = buildClosedCase(SIDE_STYLES.silver);   // silver, left
+const sideCaseR = buildClosedCase(SIDE_STYLES.blue);     // light blue, right
+scene.add(sideCaseL, sideCaseR);
+
+// Light orbit trail: a REAL tilted ellipse (a ring seen at ~78 degrees, so its
+// minor axis is ~0.2 of its major axis like image 01's — the earlier torus was
+// laid edge-on and read as a flat line), plus a wider, fainter glow torus.
+// orbitGroup carries the on-screen tilt and placement; the rings spin inside it.
+const orbitMat = new THREE.MeshBasicMaterial({ color: 0xd8f1ff, transparent: true, opacity: 0.9 });
+const orbitGlowMat = new THREE.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.22, depthWrite: false });
+const ORBIT_R = CASE_W * 2.05;
+const orbitRing = new THREE.Mesh(new THREE.TorusGeometry(ORBIT_R, 0.014, 10, 160), orbitMat);
+const orbitGlow = new THREE.Mesh(new THREE.TorusGeometry(ORBIT_R, 0.06, 10, 160), orbitGlowMat);
+orbitRing.rotation.x = orbitGlow.rotation.x = THREE.MathUtils.degToRad(78);
+const orbitGroup = new THREE.Group();
+orbitGroup.add(orbitGlow, orbitRing);
+scene.add(orbitGroup);
+
+/* ----------------------------------------------------------------------------
+   CARDS — real 3D meshes for their ENTIRE lifetime, not just while inside the
+   cavity. Depth testing against the real lid/base geometry is what makes
+   occlusion correct (an HTML overlay has no concept of what 3D geometry is in
+   front of it). There is no rendering-mode swap: the matching .card <a> is an
+   invisible keyboard/screen-reader/focus-ring stand-in (see
+   updateCardInteraction()), and pointer input is resolved from the actual
+   pointer position by raycast (see resolveFrontmost()).
+   Added as children of baseShell so they ride the case's own transform; but
+   their on-screen POSITION, SIZE and TILT are authored in screen space (see
+   LAYOUTS and layoutCardMesh()) and converted to 3D each frame — that is how
+   the composition is made to match image 05 rather than being guessed in
+   world units and tuned by eye (the earlier approach, which left the mobile
+   layout badly off).
+   ---------------------------------------------------------------------------- */
+const CARD_W = CASE_W * 0.56;
+const CARD_ASPECT = CARD_TEX_W / CARD_TEX_H;   // PLANE width / height
+const CARD_H = CARD_W / CARD_ASPECT;
+const CARD_CSS_WIDTH = 130; // must match .card { width: 130px } in the stylesheet
+// Inside the cavity, well clear of the recessed floor and the walls.
+const CARD_Z_INSIDE = -(SHELL_DEPTH - SKIN_THICKNESS) * 0.4;
+// Positive local Z: literally in front of the base's own opening plane
+// (local Z=0 is the mouth of the tray) — nothing in the base or lid geometry
+// extends past local Z=0, so any point beyond it cannot be occluded by the
+// case at all, from any angle. This is the "travel outward through the open
+// cavity" clearance target requested — not a center-crosses-a-line guess.
+const CARD_Z_CLEARED = SHELL_DEPTH * 0.5;
+
+// Six cards, matching the approved brief's exact order and Japanese labels,
+// laid out 2 columns x 3 rows inside the cavity (matching the reference
+// composition), each linking to its real section anchor below the fold.
+const SVG_ICONS = {
+  service: '<path d="M2 16l20-7-6 14-2-6-6-2 14-6"/>',
+  plan: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  campaign: '<path d="M3 12l9-9 9 9-9 9-9-9z"/><circle cx="15" cy="9" r="1.5"/>',
+  review: '<path d="M3 4h18v13H8l-4 4v-4H3V4z"/>',
+  profile: '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/>',
+  faq: '<circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" fill="currentColor" stroke="none">?</text>',
+};
+// One continuous stream, in reading order, matching the approved reference
+// (desktop-05-content.png / mobile-05-content.png): SERVICE nearest the
+// suitcase, FAQ farthest. Each card's screen-space target comes from LAYOUTS
+// (below), blended between the desktop and mobile compositions by
+// layoutMobileT in resize() — no col/row grid, no mirrored branches.
+const CARD_DEFS = [
+  { id: 'service', label: 'SERVICE', jp: 'サービス内容', icon: drawServiceIcon, sectionId: 'section-service' },
+  { id: 'plan', label: 'PLAN', jp: 'プランの一例', icon: drawPlanIcon, sectionId: 'section-plan' },
+  { id: 'campaign', label: 'CAMPAIGN', jp: '開業キャンペーン', icon: drawCampaignIcon, sectionId: 'section-campaign' },
+  { id: 'review', label: 'REVIEW', jp: '口コミ', icon: drawReviewIcon, sectionId: 'section-review' },
+  { id: 'profile', label: 'PROFILE', jp: '運営者プロフィール', icon: drawProfileIcon, sectionId: 'section-profile' },
+  { id: 'faq', label: 'FAQ', jp: 'よくある質問', icon: drawFaqIcon, sectionId: 'section-faq' },
+];
+
+/* ============================================================================
+   SCREEN-SPACE COMPOSITION TARGETS — the reference keyframe (progress 0.82).
+   Read off the approved images with a 0.05-step grid overlay
+   (desktop-05-content.png 1672x941, mobile-05-content.png 941x1672), NOT
+   guessed in world units. Everything is normalized to the FULL stage frame:
+   x / stage width, y / stage height.
+     x, y   card CENTER
+     w      card WIDTH as a fraction of stage width (height follows the card
+            aspect, CARD_ASPECT). Mobile widths are within ~15% of the
+            reference's own 0.18-0.23 and desktop widths ~10% above its
+            0.075-0.095 — rounded up for label legibility, kept small enough
+            that the zigzag still leaves the reference's gap between cards.
+            The reference's cards GROW down the stream (nearer the viewer),
+            which is reproduced rather than the earlier "shrink with depth".
+     rot    on-screen tilt in degrees, positive = clockwise
+   suitcase: target rect for the whole open assembly (bbox incl. handle and
+   wheels) plus its clockwise roll — both references show the case tipped
+   ~15-20 degrees clockwise.
+   Desktop: one flattening diagonal down and right. SERVICE overlaps the
+   case's opening (the reference's "connected to the cavity" moment).
+   Mobile: case above, one ordered cascade below with an alternating
+   right/left/right zigzag of about +-0.11 of frame width.
+   The two layouts are blended by viewport ASPECT (layoutMobileT in
+   resize()), not width, so a portrait tablet or a narrowed desktop window
+   gets the vertical stream and a landscape phone gets the diagonal.
+   ============================================================================ */
+const LAYOUTS = {
+  desktop: {
+    suitcase: { x0: 0.13, x1: 0.41, y0: 0.045, y1: 0.50, rollDeg: 18 },
+    cards: [
+      { x: 0.313, y: 0.300, w: 0.082, rot: 12 },  // service
+      { x: 0.397, y: 0.412, w: 0.088, rot: 12 },  // plan
+      { x: 0.495, y: 0.525, w: 0.096, rot: 8 },   // campaign
+      { x: 0.610, y: 0.613, w: 0.103, rot: -4 },  // review
+      { x: 0.737, y: 0.680, w: 0.105, rot: -7 },  // profile
+      { x: 0.870, y: 0.762, w: 0.103, rot: -3 },  // faq
+    ],
+  },
+  mobile: {
+    suitcase: { x0: 0.23, x1: 0.69, y0: 0.06, y1: 0.31, rollDeg: 16 },
+    cards: [
+      { x: 0.50, y: 0.23, w: 0.175, rot: 9 },     // service
+      { x: 0.62, y: 0.39, w: 0.195, rot: 6 },     // plan
+      { x: 0.39, y: 0.49, w: 0.205, rot: -5 },    // campaign
+      { x: 0.61, y: 0.61, w: 0.215, rot: 6 },     // review
+      { x: 0.40, y: 0.73, w: 0.220, rot: -10 },   // profile
+      { x: 0.65, y: 0.84, w: 0.225, rot: 8 },     // faq
+    ],
+  },
+};
+// Card height never exceeds this fraction of the frame height (protects
+// short landscape frames, where a width-derived card would be taller than
+// the reference's ~0.26 and start to collide vertically).
+const CARD_MAX_H_FRAC = 0.29;
+
+/* ============================================================================
+   OPENING COMPOSITION (progress 0) — read off desktop-01 / mobile-01 the same
+   way as LAYOUTS: each closed case is fitted so its projected bbox (handle and
+   wheels included) fills the given rect, normalized to the full stage frame;
+   `roll` is the clockwise lean in degrees (negative = counter-clockwise),
+   `yaw` the turn toward/away from the viewer (so the three cases float at
+   different angles, not as three copies of one pose). Relative sizes come
+   from the rects: the side cases are ~0.5-0.6 of the centre case's height.
+   `ring` is the light trail: centre, half-width (fraction of frame width) and
+   screen tilt. The branding block sits ABOVE the luggage: the centre case's
+   top is at 0.367 of frame height on desktop / 0.413 on mobile, below the
+   taglines (which end near 0.33 / 0.37); see the .brandOverlay CSS.
+   ============================================================================ */
+const OPEN_LAYOUTS = {
+  desktop: {
+    center: { x0: 0.389, x1: 0.572, y0: 0.367, y1: 0.751, roll: 12, yaw: -24 },
+    left:   { x0: 0.187, x1: 0.281, y0: 0.430, y1: 0.640, roll: -11, yaw: 30 },
+    right:  { x0: 0.706, x1: 0.807, y0: 0.478, y1: 0.707, roll: 22, yaw: -34 },
+    ring:   { cx: 0.455, cy: 0.540, rx: 0.280, tilt: 8 },
+  },
+  mobile: {
+    center: { x0: 0.303, x1: 0.645, y0: 0.413, y1: 0.647, roll: 13, yaw: -24 },
+    left:   { x0: 0.115, x1: 0.285, y0: 0.438, y1: 0.556, roll: -12, yaw: 30 },
+    right:  { x0: 0.698, x1: 0.900, y0: 0.516, y1: 0.656, roll: 27, yaw: -34 },
+    ring:   { cx: 0.480, cy: 0.510, rx: 0.410, tilt: 6 },
+  },
+};
+// The single progress value at which ALL SIX cards are simultaneously at
+// their full stream target, matching image 05 as one held composition — not
+// six cards arriving at six different times (that was the earlier design,
+// and reported as not reproducing the reference: "showing SERVICE inside at
+// an earlier moment and the other cards later does not reproduce that
+// composition"). Individual cards can still start revealing at staggered
+// times (see revealStart below) for a cascading entrance, but every one
+// FINISHES its drift by this same point and holds there.
+const CARD_KEYFRAME_PROGRESS = 0.82;
+
+const cardLayerEl = document.getElementById('cardLayer');
+CARD_DEFS.forEach((def, i) => {
+  // --- 3D mesh (occluded by real geometry while inside the cavity) ---
+  def.index = i;
+  const tex = makeCardCanvas(def);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: false });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(CARD_W, CARD_H), mat);
+  // Draw order = reverse reading order (SERVICE last, so on top), matching
+  // the small per-card Z bias below. Cards are transparent with depthWrite
+  // off, so between two overlapping cards the DRAW ORDER decides which one is
+  // visibly on top; three.js would otherwise sort them by the depth of each
+  // card's CENTER, which under the case's yaw is dominated by how far right
+  // the card is, not by which one is in front — and the pointer raycast (which
+  // picks the nearest surface at the pointer) would then disagree with what
+  // is actually drawn on top.
+  mesh.renderOrder = 10 - i;
+  mesh.userData.card = def;
+  mesh.userData.isCard = true;
+  baseShell.add(mesh);
+  def.mesh = mesh;
+
+  // --- HTML element (real, readable, a real link to its section) ---
+  const el = document.createElement('a');
+  el.className = 'card';
+  el.id = 'card-' + def.id;
+  el.href = '#' + def.sectionId;
+  el.setAttribute('aria-label', `${def.label} — ${def.jp}`);
+  el.innerHTML =
+    `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">${SVG_ICONS[def.id]}</svg>` +
+    `${def.label}<span class="jp">${def.jp}</span>`;
+  // Not a Tab stop until the first frame's interaction pass says otherwise
+  // (see updateCardInteraction) — an anchor with href is focusable by
+  // default regardless of pointer-events, so without this a card would be
+  // reachable by keyboard for one initial paint before JS runs.
+  el.tabIndex = -1;
+  cardLayerEl.appendChild(el);
+  def.el = el;
+
+  // --- per-card static layout inside the cavity + exit trajectory params ---
+  // Small cluster near the cavity opening while still "inside" (pre-drift) —
+  // a slight per-card cascade, not a 2-col grid, so the single-file stream
+  // reads as one sequence emerging in order rather than a stack popping from
+  // one exact point.
+  def.insideX = 0.10 + i * 0.03;
+  def.insideY = 0.30 - i * 0.05;
+  // Tiny per-card Z step (earlier cards nearer the viewer). Only large
+  // enough that where two cards overlap, "which one is in front" is a real,
+  // consistent depth difference — not coplanar geometry resolved by float
+  // noise — and agrees with mesh.renderOrder above.
+  def.zBias = -i * 0.004;
+  // Filled in per frame by layoutCardMesh(); read by the HUD and the tests.
+  def.runtime = { opacity: 0, revealT: 0, streamT: 0 };
+  // Stagger the ENTRANCE only (later cards start revealing a little later,
+  // preserving the reading order SERVICE -> FAQ as a cascade) — but every
+  // card's drift ends at the SAME shared CARD_KEYFRAME_PROGRESS, so the
+  // composition converges to the full six-card reference layout at one
+  // specific, reproducible point rather than settling piecemeal.
+  const stagger = i * 0.035;
+  def.revealStart = 0.30 + stagger;
+  def.revealEnd = def.revealStart + 0.07;
+  def.driftEnd = CARD_KEYFRAME_PROGRESS;
+});
+
+/* ============================================================================
+   SCROLL-DRIVEN RENDER LOOP — same structure/timing as the CSS pass:
+   fall + tumble (fallGroup), hinge rotation (lidPivot), frame-fit compensation
+   (camera/group offset instead of CSS translate), card overlay projection.
+   ============================================================================ */
+const track = document.getElementById('track');
+const hud = document.getElementById('hud');
+const brandOverlayEl = document.getElementById('brandOverlay');
+
+let fitScale = 1;
+// How far apart the silver/blue side cases sit from the center one, as a
+// fraction of the full desktop spread — narrower viewports pull them in
+// (rather than letting them run off-screen) so all three stay visible in the
+// initial view on mobile, same shared scene/logic, viewport-adapted spacing.
+let sideSpreadScale = 1;
+// Stage size in CSS px and the world-units-per-frame conversion for this
+// camera. Nothing else feeds the layout: in particular NOT the height of the
+// debug banners (an earlier pass kept the suitcase clear of them, which made
+// the presentation depend on debug chrome and shrank the case on phones).
+let frameW = 1, frameH = 1, visibleHeightAtOrigin = 1;
+// Minimum clearance above the suitcase, as a fraction of frame height — a
+// design safe margin, independent of any UI drawn over the stage.
+const SAFE_TOP_FRAC = 0.03;
+// Blend between the desktop diagonal and mobile cascade layouts: 0 = desktop,
+// 1 = mobile. Driven by the stage's ASPECT RATIO (portrait -> cascade), not
+// its raw width, and continuous rather than a breakpoint snap.
+let layoutMobileT = 0;
+// Keyframe placement of the whole open assembly (world position, absolute
+// scale, roll), SOLVED in solveAssemblyKey() so the case's on-screen bounds
+// land on the layout's suitcase target rect.
+const assemblyKey = { x: 0, y: 0, scale: 1, tumble: 0 };
+
+function blendedLayout() {
+  const m = layoutMobileT, D = LAYOUTS.desktop, M = LAYOUTS.mobile;
+  const sc = {};
+  for (const k of ['x0', 'x1', 'y0', 'y1', 'rollDeg']) sc[k] = lerp(D.suitcase[k], M.suitcase[k], m);
+  return {
+    suitcase: sc,
+    cards: D.cards.map((c, i) => ({
+      x: lerp(c.x, M.cards[i].x, m), y: lerp(c.y, M.cards[i].y, m),
+      w: lerp(c.w, M.cards[i].w, m), rot: lerp(c.rot, M.cards[i].rot, m),
+    })),
+  };
+}
+
+// Screen-space bounds of a set of meshes: every mesh's local bounding box, its
+// 8 corners transformed by that mesh's own world matrix and projected through
+// the camera. Tighter than a world AABB of a rolled, yawed, lid-swung-open
+// assembly, and unlike Box3.setFromObject it can leave the cards out.
+const _ab = new THREE.Vector3();
+function meshesOf(group) {
+  const list = [];
+  group.traverse((o) => {
+    if (o.isMesh && !o.userData.isCard) {
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      list.push(o);
+    }
+  });
+  return list;
+}
+function screenBoundsOf(meshes) {
+  let l = Infinity, r = -Infinity, t = Infinity, b = -Infinity;
+  for (const m of meshes) {
+    const bb = m.geometry.boundingBox;
+    for (let i = 0; i < 8; i++) {
+      _ab.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z)
+        .applyMatrix4(m.matrixWorld).project(camera);
+      const sx = (_ab.x * 0.5 + 0.5) * frameW, sy = (-_ab.y * 0.5 + 0.5) * frameH;
+      if (sx < l) l = sx; if (sx > r) r = sx; if (sy < t) t = sy; if (sy > b) b = sy;
+    }
+  }
+  return { left: l, right: r, top: t, bottom: b };
+}
+let assemblyMeshes = null;
+function assemblyScreenBounds() {
+  if (!assemblyMeshes) assemblyMeshes = meshesOf(fallGroup);
+  return screenBoundsOf(assemblyMeshes);
+}
+
+// Fit `group` (rotation already set by the caller) at world depth `z` so the
+// projected bounds of `meshes` fill the pixel rect, centred in it, limited by
+// whichever of width/height binds. A few fixed-point iterations (scale,
+// re-measure, re-centre): perspective makes the map slightly nonlinear, so
+// one closed-form step is not exact. Returns {x, y, z, scale}.
+function fitGroupToRect(group, meshes, x0, y0, x1, y1, z) {
+  const tw = x1 - x0, th = y1 - y0, tcx = (x0 + x1) / 2, tcy = (y0 + y1) / 2;
+  const pxPerUnit = frameH / (2 * (camera.position.z - z) * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+  let s = fitScale * 0.5, px = 0, py = 0;
+  const apply = () => {
+    group.position.set(px, py, z);
+    group.scale.setScalar(s);
+    group.updateMatrixWorld(true);
+    return screenBoundsOf(meshes);
+  };
+  for (let it = 0; it < 12; it++) {
+    let B = apply();
+    s *= Math.min(tw / (B.right - B.left), th / (B.bottom - B.top));
+    B = apply();
+    px += (tcx - (B.left + B.right) / 2) / pxPerUnit;
+    py -= (tcy - (B.top + B.bottom) / 2) / pxPerUnit;
+  }
+  apply();
+  return { x: px, y: py, z, scale: s };
+}
+
+// KEYFRAME placement: the assembly with the lid fully open, rolled clockwise
+// by the layout's rollDeg, fitted to the layout's suitcase rect (top held at
+// least SAFE_TOP_FRAC below the frame top).
+function solveAssemblyKey(sc) {
+  const y1 = sc.y1 * frameH;
+  const y0 = Math.min(Math.max(sc.y0 * frameH, SAFE_TOP_FRAC * frameH), y1 - 40);
+  const tumble = -THREE.MathUtils.degToRad(sc.rollDeg);   // clockwise on screen = negative rotation.z
+  lidPivot.rotation.y = -THREE.MathUtils.degToRad(LID_MAX_DEG);
+  fallGroup.rotation.set(CAMERA_ROT_X, CAMERA_ROT_Y, tumble);
+  if (!assemblyMeshes) assemblyMeshes = meshesOf(fallGroup);
+  const r = fitGroupToRect(fallGroup, assemblyMeshes, sc.x0 * frameW, y0, sc.x1 * frameW, y1, 0);
+  assemblyKey.x = r.x; assemblyKey.y = r.y; assemblyKey.scale = r.scale; assemblyKey.tumble = tumble;
+}
+
+// OPENING placement (progress 0): the centre case CLOSED, fitted to its rect
+// from image 01, plus each side case fitted to its own rect at its own
+// angles, plus the light-trail ring. Everything the opening-phase animation
+// starts from — render() moves the centre case down and the side cases up
+// relative to these poses.
+const openKey = { x: 0, y: 0, scale: 1, tumble: 0 };
+const sideOpen = [{}, {}];
+const orbitOpen = { x: 0, y: 0, scale: 1, tilt: 0 };
+let sideMeshes = null;
+function blendedOpenLayout() {
+  const m = layoutMobileT, D = OPEN_LAYOUTS.desktop, M = OPEN_LAYOUTS.mobile;
+  const out = {};
+  for (const k of ['center', 'left', 'right', 'ring']) {
+    out[k] = {};
+    for (const f of Object.keys(D[k])) out[k][f] = lerp(D[k][f], M[k][f], m);
+  }
+  return out;
+}
+function solveOpenLayout() {
+  const L = blendedOpenLayout();
+  const rad = THREE.MathUtils.degToRad;
+  // centre, lid closed
+  lidPivot.rotation.y = 0;
+  fallGroup.rotation.set(CAMERA_ROT_X, rad(L.center.yaw), -rad(L.center.roll));
+  if (!assemblyMeshes) assemblyMeshes = meshesOf(fallGroup);
+  const c = fitGroupToRect(fallGroup, assemblyMeshes, L.center.x0 * frameW, L.center.y0 * frameH, L.center.x1 * frameW, L.center.y1 * frameH, 0);
+  openKey.x = c.x; openKey.y = c.y; openKey.scale = c.scale; openKey.tumble = -rad(L.center.roll); openKey.yaw = rad(L.center.yaw);
+  // side cases (independent groups, a little behind the centre case)
+  if (!sideMeshes) sideMeshes = [meshesOf(sideCaseL), meshesOf(sideCaseR)];
+  [[sideCaseL, L.left, 5], [sideCaseR, L.right, 5]].forEach(([grp, r, pitch], i) => {
+    grp.rotation.set(rad(pitch), rad(r.yaw), -rad(r.roll));
+    const f = fitGroupToRect(grp, sideMeshes[i], r.x0 * frameW, r.y0 * frameH, r.x1 * frameW, r.y1 * frameH, -0.5);
+    sideOpen[i] = { ...f, rx: rad(pitch), ry: rad(r.yaw), rz: -rad(r.roll) };
+  });
+  // light trail: centred on the layout point on the z=0 plane, sized so its
+  // major semi-axis spans rx of the frame width
+  const pxPerUnit = frameH / visibleHeightAtOrigin;
+  orbitOpen.x = ((L.ring.cx * frameW - frameW / 2) / pxPerUnit);
+  orbitOpen.y = -((L.ring.cy * frameH - frameH / 2) / pxPerUnit);
+  orbitOpen.scale = (L.ring.rx * frameW) / (ORBIT_R * pxPerUnit);
+  orbitOpen.tilt = rad(L.ring.tilt);
+}
+
+// Convert the normalized layout into pixel targets for this stage size and
+// solve the suitcase keyframe. Runs on every resize.
+function solveLayout() {
+  const L = blendedLayout();
+  L.cards.forEach((c, i) => {
+    CARD_DEFS[i].target = {
+      x: c.x * frameW, y: c.y * frameH,
+      w: Math.min(c.w * frameW, CARD_MAX_H_FRAC * frameH * CARD_BODY_ASPECT),
+      rotDeg: c.rot,
+    };
+  });
+  solveAssemblyKey(L.suitcase);
+  solveOpenLayout();
+}
+
+// Position the photo window for this frame and progress (see the SKY comment).
+// Landscape: a 1500-photo-px-wide window (wider than the 1200px photo; the
+// overhang mirrors, which continues the cloud banks off the edges) anchored so
+// the cumulus tower sits left and its mirror fills the lower right, like the
+// reference. Portrait: a tall 1700-photo-px window centred on the tower.
+// Panned downward through the photo with scroll progress (clouds rise as the
+// case falls), settling at the keyframe.
+function updateSky(progress) {
+  const A = frameW / frameH, m = layoutMobileT;
+  const tune = window.__skyTune || {};
+  const dW = tune.dW || 2100, mH = tune.mH || 2000;
+  const winW = lerp(dW, mH * A, m), winH = lerp(dW / A, mH, m);
+  const left = lerp(tune.dLeft ?? -450, 480 - winW / 2 + (tune.mLeft ?? 300), m);
+  const e = 1 - Math.pow(1 - smooth(0, CARD_KEYFRAME_PROGRESS, progress), 2);
+  const top = lerp(lerp(tune.d0 ?? 150, tune.d1 ?? 260, e), lerp(tune.m0 ?? -450, tune.m1 ?? 200, e), m);
+  const u = skyMat.uniforms;
+  u.uWin.value.set(winW, winH);
+  u.uTopLeft.value.set(left, top);
+  u.uAspect.value = A;
+  u.uSun.value.set(lerp(0.985, 0.965, m), 1.01);
+}
+
+function resize() {
+  const w = stageEl.clientWidth, h = stageEl.clientHeight;
+  frameW = w; frameH = h;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  camera.updateMatrixWorld();
+  // Fit the closed case comfortably at every breakpoint, same spirit as the old
+  // CSS --boxw: min(260px, 58vw, 50vh) responsive cap — but under a PERSPECTIVE
+  // camera, a fixed world-unit size does not map to a fixed CSS-pixel size the
+  // way a CSS transform did, so this converts the target pixel width back into
+  // the world-unit scale needed to reproduce it, given this camera's fixed
+  // distance/FOV (visibleHeightAtOrigin is constant regardless of canvas size;
+  // screenPxWidth = caseWidthWorld * canvasHeightPx / visibleHeightAtOrigin).
+  const fovRad = THREE.MathUtils.degToRad(camera.fov);
+  visibleHeightAtOrigin = 2 * camera.position.z * Math.tan(fovRad / 2);
+  // h*0.40, not 0.50: at short-landscape sizes (e.g. 812x375) the case's
+  // vertical extent during the opening/tumble motion is taller than its
+  // closed-state footprint alone suggests, and 0.50 left a real bottom
+  // overflow (up to 30.8px, measured at 812x375/45deg) that the previous,
+  // incorrect min/max-only projection had been masking.
+  // h*0.29: the case is now 1.6x taller than wide, so cap its WIDTH by frame height
+  // such that the closed case stays under ~46% of the frame height.
+  const targetPxWidth = Math.min(260, w * 0.58, h * 0.29);
+  const neededCaseWorldWidth = (targetPxWidth * visibleHeightAtOrigin) / h;
+  fitScale = neededCaseWorldWidth / CASE_W;
+  sideSpreadScale = clamp((w - 300) / 600, 0.15, 1);
+  layoutMobileT = 1 - clamp((w / h - 0.8) / (1.2 - 0.8), 0, 1);
+  solveLayout();
+  render(lastProgress);
+}
+
+// Correct perspective-aware screen-space bounds: projecting only Box3.min and
+// Box3.max (2 of the 8 corners) after computing the AABB is wrong under
+// perspective — the other 6 corners can project further left/right/up/down
+// than either of those two points once the box is rotated (as it is here, via
+// fallGroup's tumble/camera rotation), because perspective projection is
+// nonlinear and doesn't commute with taking a min/max in world space. This
+// projects all 8 corners individually and takes the min/max of the RESULTING
+// screen coordinates, which is the only correct way to get the true 2D bounds.
+const _corner = new THREE.Vector3();
+function projectedScreenBounds(box, camera, rectW, rectH) {
+  let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    _corner.set(
+      i & 1 ? box.max.x : box.min.x,
+      i & 2 ? box.max.y : box.min.y,
+      i & 4 ? box.max.z : box.min.z
+    ).project(camera);
+    const sx = (_corner.x * 0.5 + 0.5) * rectW;
+    const sy = (-_corner.y * 0.5 + 0.5) * rectH;
+    if (sx < left) left = sx;
+    if (sx > right) right = sx;
+    if (sy < top) top = sy;
+    if (sy > bottom) bottom = sy;
+  }
+  return { left, right, top, bottom };
+}
+
+// The ring rises slightly as the camera falls (it fades out within 0.22).
+function rise0(progress) { return visibleHeightAtOrigin * 0.35 * smooth(0, 0.28, progress); }
+let lastProgress = 0;
+function render(progress) {
+  lastProgress = progress;
+  const openTLinear = smooth(OPEN_START, OPEN_END, progress);
+  const openT = easeOpen(openTLinear);
+  const lidDegMagnitude = openT * LID_MAX_DEG;
+
+  const swingHump = SWING_HUMP * Math.sin(lidDegMagnitude * Math.PI / 180);
+  const frameShiftX = lerp(0, FRAME_SHIFT_X, openT) + swingHump;
+  const frameScaleT = lerp(1, FRAME_SCALE_MIN, openT);
+
+  // The centre case starts from its SOLVED closed pose (openKey — fitted to
+  // image 01) and falls from there: fallY / the lid-swing framing shifts are
+  // in "case units", so they are scaled by the solved scale instead of the old
+  // fitScale (which is what put the case over the logo on a 16:9 frame).
+  const os = openKey.scale;
+  const fallDrop = lerp(0, -1.03, progress);            // world-unit-per-case drop, downward is -Y
+  const tumble = openKey.tumble + THREE.MathUtils.degToRad(lerp(0, 7, progress));
+
+  // Opening-phase pose blends into the SOLVED keyframe placement (assemblyKey:
+  // position, absolute scale, clockwise roll — fitted so the open case's
+  // on-screen bounds land on the layout's suitcase target rect) across the
+  // card-phase window. cardPhaseT reaches 1 exactly when the lid finishes
+  // opening, so from OPEN_END to the hero release the assembly is static.
+  // Stateless in progress, so reverse scrolling retraces it.
+  const cardPhaseT = smooth(CARD_STREAM_PHASE_START, CARD_STREAM_PHASE_END, progress);
+  const ph = cardPhaseT * cardPhaseT * (3 - 2 * cardPhaseT);
+  fallGroup.position.set(
+    lerp(openKey.x + frameShiftX * os, assemblyKey.x, ph),
+    lerp(openKey.y + fallDrop * os, assemblyKey.y, ph),
+    0
+  );
+  fallGroup.rotation.set(CAMERA_ROT_X, lerp(openKey.yaw, CAMERA_ROT_Y, ph), lerp(tumble, assemblyKey.tumble, ph));
+  fallGroup.scale.setScalar(lerp(os * frameScaleT, assemblyKey.scale, ph));
+
+  // --- side suitcases + orbit: the initial-view composition, gone early in the
+  // fall. The APPROVED direction: the CENTER suitcase falls faster and the
+  // camera follows it; the side cases fall SLOWER in absolute terms, so
+  // RELATIVE to the center-following camera they rise and leave the frame
+  // (not race downward). Each rises by a full frame height over the window, so
+  // they are fully out of frame when they are hidden — no fade needed (the
+  // earlier fade also fought the shared handle/wheel materials). ---
+  const sideT = smooth(0, 0.28, progress);
+  const sideVisible = sideT < 0.999;
+  sideCaseL.visible = sideVisible;
+  sideCaseR.visible = sideVisible;
+  if (sideVisible) {
+    const rise = visibleHeightAtOrigin * 1.2 * sideT;
+    [sideCaseL, sideCaseR].forEach((g, i) => {
+      const o = sideOpen[i];
+      g.position.set(o.x, o.y + rise, o.z);
+      g.rotation.set(o.rx, o.ry, o.rz + THREE.MathUtils.degToRad((i ? -6 : 6) * sideT));
+      g.scale.setScalar(o.scale);
+    });
+  }
+  const orbitFadeT = smooth(0.05, 0.22, progress);
+  const orbitOpacity = 0.9 * (1 - orbitFadeT);
+  orbitGroup.visible = orbitOpacity > 0.01;
+  if (orbitGroup.visible) {
+    orbitGroup.position.set(orbitOpen.x, orbitOpen.y + rise0(progress), -0.2);
+    orbitGroup.rotation.z = orbitOpen.tilt;
+    orbitGroup.scale.setScalar(orbitOpen.scale);
+    orbitRing.rotation.z = orbitGlow.rotation.z = THREE.MathUtils.degToRad(lerp(0, 30, progress));
+    orbitMat.opacity = orbitOpacity;
+    orbitGlowMat.opacity = 0.22 * (1 - orbitFadeT);
+  }
+
+  // --- brand overlay (real HTML text): fades with the same early window as
+  // the orbit, matching "the light orbit... and the approved FSKY branding"
+  // as the shared "initial view" that clears once the fall begins in earnest.
+  brandOverlayEl.style.opacity = String(1 - smooth(0.03, 0.2, progress));
+
+  const lidDeg = -lerp(0, LID_MAX_DEG, openT);
+  lidPivot.rotation.y = THREE.MathUtils.degToRad(lidDeg);
+  // Force matrixWorld up to date now (normally deferred to renderer.render()):
+  // the projection/raycast below needs baseShell/lidShell's world transforms
+  // to reflect THIS frame's fallGroup transform, not last frame's.
+  fallGroup.updateMatrixWorld(true);
+
+  // --- cards: pass 1 places every card mesh (screen-space authored, see
+  // layoutCardMesh) and refreshes its matrix; pass 2 aligns the keyboard/
+  // focus stand-ins and runs the visibility test, which raycasts against the
+  // whole scene and therefore needs EVERY card's matrix current, not just the
+  // ones placed earlier in the loop. ---
+  const follow = fallGroup.scale.x / assemblyKey.scale;
+  CARD_DEFS.forEach((def) => layoutCardMesh(def, progress, follow));
+  CARD_DEFS.forEach((def) => updateCardInteraction(def));
+
+  updateSky(progress);
+  renderer.clear();
+  renderer.render(skyScene, camera);
+  renderer.clearDepth();
+  renderer.render(scene, camera);
+
+  // HUD "assembly bbox" is the WHOLE composition: the suitcase plus every
+  // visible card's projected corners — so the overflow readout reflects what
+  // is actually on screen (an earlier version measured Box3.setFromObject,
+  // which also counted invisible frozen card meshes and mis-reported clipping).
+  const sb = assemblyScreenBounds();
+  const bounds = { left: sb.left, right: sb.right, top: sb.top, bottom: sb.bottom };
+  for (const def of CARD_DEFS) {
+    if (!def.mesh.visible) continue;
+    for (const p of cardQuad(def)) {
+      if (p.x < bounds.left) bounds.left = p.x;
+      if (p.x > bounds.right) bounds.right = p.x;
+      if (p.y < bounds.top) bounds.top = p.y;
+      if (p.y > bounds.bottom) bounds.bottom = p.y;
+    }
+  }
+  lastBounds = { suitcase: sb, all: bounds };
+  const rectW = frameW, rectH = frameH;
+  hud.textContent =
+    `progress: ${progress.toFixed(4)}  lid: ${lidDeg.toFixed(1)}deg\n` +
+    `assembly bbox: L=${bounds.left.toFixed(0)} R=${bounds.right.toFixed(0)} T=${bounds.top.toFixed(0)} B=${bounds.bottom.toFixed(0)} (${rectW}x${rectH})\n` +
+    `overflow L:${bounds.left < 0 ? bounds.left.toFixed(1) : '0(ok)'} R:${bounds.right > rectW ? (bounds.right - rectW).toFixed(1) : '0(ok)'} ` +
+    `T:${bounds.top < 0 ? bounds.top.toFixed(1) : '0(ok)'} B:${bounds.bottom > rectH ? (bounds.bottom - rectH).toFixed(1) : '0(ok)'}\n` +
+    `layout: ${layoutMobileT.toFixed(2)}(1=mobile)  service: ${cardDebugState(CARD_DEFS[0])}  faq: ${cardDebugState(CARD_DEFS[5])}`;
+}
+let lastBounds = null;
+
+/* ============================================================================
+   CARDS: SCREEN-SPACE LAYOUT, VISIBILITY, POINTER RESOLUTION
+   ----------------------------------------------------------------------------
+   Every card's timeline is a pure function of scroll progress (reveal ->
+   outward through the cavity -> stream to its target), so reverse scrolling
+   retraces it exactly. The card's on-screen CENTER, WIDTH and TILT are
+   authored in screen space (LAYOUTS -> def.target, in px) and converted into a
+   3D transform each frame:
+     1. START point = where the card would appear if it stayed inside the
+        cavity (projected from its local inside position, so it rides the case),
+     2. the centre is interpolated in screen space toward the target,
+     3. that screen point is un-projected onto the card's local z-plane
+        (screenToBaseLocal) — a real 3D position, so WebGL depth testing still
+        decides what the case occludes,
+     4. scale and in-plane rotation are solved from the projected size / angle
+        of the card's own x-axis so the card LANDS at the target width and tilt
+        despite the case's yaw/pitch/roll and the perspective.
+   ============================================================================ */
+const ease3 = (x) => x * x * (3 - 2 * x);
+const _t0 = new THREE.Vector3(), _t1 = new THREE.Vector3();
+const _cD = new THREE.Vector3(), _cN = new THREE.Vector3(), _cP = new THREE.Vector3(), _loc = new THREE.Vector3();
+const _pxA = { x: 0, y: 0 }, _pxB = { x: 0, y: 0 };
+
+function projectPx(v, out) {
+  v.project(camera);
+  out.x = (v.x * 0.5 + 0.5) * frameW;
+  out.y = (-v.y * 0.5 + 0.5) * frameH;
+  return out;
+}
+
+// The point on baseShell's local z = zLocal plane that the camera sees at
+// stage pixel (sx, sy): ray from the camera through the pixel, intersected
+// with that (world-space) plane, then brought back into baseShell space.
+function screenToBaseLocal(sx, sy, zLocal, out) {
+  _cD.set((sx / frameW) * 2 - 1, -((sy / frameH) * 2 - 1), 0.5).unproject(camera).sub(camera.position).normalize();
+  _cP.set(0, 0, zLocal).applyMatrix4(baseShell.matrixWorld);
+  _cN.set(0, 0, 1).transformDirection(baseShell.matrixWorld);
+  const t = _cP.sub(camera.position).dot(_cN) / _cD.dot(_cN);
+  out.copy(camera.position).addScaledVector(_cD, t);
+  return baseShell.worldToLocal(out);
+}
+
+// Pass 1 of the per-frame card update (see render()).
+function layoutCardMesh(def, t, follow) {
+  const revealT = smooth(def.revealStart, def.revealEnd, t);
+  const driftT = smooth(def.revealEnd, def.driftEnd, t);
+  // First ~40% of the drift moves the card outward (+Z) through the cavity
+  // mouth; the screen-space glide toward the target takes over from 20%.
+  // Both are sub-ranges of the SAME driftT, not separate phases.
+  const outwardT = smooth(0, 0.4, driftT);
+  const streamT = smooth(0.2, 1, driftT);
+  const e = ease3(streamT);
+  def.runtime.opacity = revealT; def.runtime.revealT = revealT; def.runtime.streamT = streamT;
+  const mesh = def.mesh;
+  mesh.visible = revealT > 0.01;
+  mesh.material.opacity = revealT;
+  if (!mesh.visible) return;
+
+  const zLocal = lerp(CARD_Z_INSIDE, CARD_Z_CLEARED + def.zBias, outwardT);
+  const tgt = def.target;
+
+  _t0.set(def.insideX, def.insideY, zLocal).applyMatrix4(baseShell.matrixWorld);
+  projectPx(_t0, _pxA);
+  screenToBaseLocal(lerp(_pxA.x, tgt.x, e), lerp(_pxA.y, tgt.y, e), zLocal, _loc);
+  mesh.position.copy(_loc);
+  mesh.rotation.z = 0;
+  mesh.scale.setScalar(1);
+  mesh.updateMatrixWorld();
+
+  _t0.set(0, 0, 0).applyMatrix4(mesh.matrixWorld);
+  _t1.set(CARD_W / 2, 0, 0).applyMatrix4(mesh.matrixWorld);
+  projectPx(_t0, _pxA);
+  projectPx(_t1, _pxB);
+  const halfPx = Math.hypot(_pxB.x - _pxA.x, _pxB.y - _pxA.y);
+  const a0 = Math.atan2(_pxB.y - _pxA.y, _pxB.x - _pxA.x);   // screen angle (y down) of the card's own +x axis
+
+  // Width: grows in from half size while riding the case's own scale (so a
+  // card inside the cavity stays in proportion to it), converging to the
+  // target's absolute pixel width as it settles.
+  const wPx = tgt.w * CARD_PLANE_OVER_BODY * lerp(0.5, 1, revealT) * lerp(clamp(follow, 0.6, 2.2), 1, e);
+  mesh.scale.setScalar(wPx / 2 / halfPx);
+  // Local rotation.z is counter-clockwise-positive; screen angle is
+  // clockwise-positive (y down): the card's screen angle is a0 - rot.
+  mesh.rotation.z = a0 - THREE.MathUtils.degToRad(tgt.rotDeg * e);
+  mesh.updateMatrixWorld();
+}
+
+// The card's four corners (TL, TR, BR, BL) in stage pixels, from the mesh's
+// current world matrix.
+function cardQuad(def) {
+  const hw = CARD_W / 2, hh = CARD_H / 2;
+  return [[-hw, hh], [hw, hh], [hw, -hh], [-hw, -hh]].map(([x, y]) => {
+    _t0.set(x, y, 0).applyMatrix4(def.mesh.matrixWorld);
+    return projectPx(_t0, { x: 0, y: 0 });
+  });
+}
+
+/* ----------------------------------------------------------------------------
+   POINTER RESOLUTION. "What is at this pixel?" is answered by casting a ray
+   from the camera through that pixel and taking the FIRST visible surface
+   among the real geometry (both shells + every card). That is the same
+   question the depth buffer answers when drawing, so it can't disagree with
+   what the user sees the way a stack of overlapping HTML rectangles can.
+   Two refinements make it match the drawn pixels:
+    - a card whose reveal opacity is still below CARD_MIN_OPACITY is treated
+      as not there yet (also non-tabbable),
+    - the hit's UV is tested against the card's ROUNDED-RECT silhouette, so a
+      click on a transparent corner falls through to whatever is behind it.
+   ---------------------------------------------------------------------------- */
+const CARD_MIN_OPACITY = 0.4;
+const CARD_HIT_SLOP = 1.5; // logical texture px
+const _raycaster = new THREE.Raycaster();
+const _rayNdc = new THREE.Vector2();
+function uvInsideCardShape(uv) {
+  const w = CARD_TEX_W, h = CARD_TEX_H, r = CARD_TEX_R, P = CARD_TEX_PAD;
+  const x = uv.x * w, y = (1 - uv.y) * h;
+  const cx = clamp(x, P + r, w - P - r), cy = clamp(y, P + r, h - P - r);
+  // +CARD_HIT_SLOP: the antialiased luminous rim is painted ~1px outside the
+  // body's rounded rect; a click on that visible rim should still count.
+  const rr = r + CARD_HIT_SLOP;
+  return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= rr * rr;
+}
+function frontmostAtNdc(nx, ny) {
+  _rayNdc.set(nx, ny);
+  _raycaster.setFromCamera(_rayNdc, camera);
+  const hits = _raycaster.intersectObjects([baseShell, lidShell], true);
+  for (const hit of hits) {
+    const o = hit.object;
+    if (!o.visible) continue;
+    const def = o.userData.card;
+    if (def) {
+      if (def.runtime.opacity < CARD_MIN_OPACITY) continue;
+      if (!hit.uv || !uvInsideCardShape(hit.uv)) continue;
+      return { kind: 'card', def, hit };
+    }
+    return { kind: 'suitcase', hit };
+  }
+  return null;
+}
+function resolvePointer(clientX, clientY) {
+  const r = renderer.domElement.getBoundingClientRect();
+  return frontmostAtNdc(((clientX - r.left) / r.width) * 2 - 1, -(((clientY - r.top) / r.height) * 2 - 1));
+}
+
+// A card is "available" (a keyboard Tab stop) when any of five sample points
+// on it is currently the frontmost visible surface — i.e. some part of it is
+// actually exposed. Several points, not just the centre, because on the mobile
+// cascade consecutive cards can overlap enough to cover another card's centre.
+const CARD_SAMPLE_OFFSETS = [[0, 0], [0.55, 0.55], [-0.55, 0.55], [0.55, -0.55], [-0.55, -0.55]];
+function isCardVisible(def) {
+  for (const [ox, oy] of CARD_SAMPLE_OFFSETS) {
+    _t0.set(ox * CARD_W / 2, oy * CARD_H / 2, 0).applyMatrix4(def.mesh.matrixWorld).project(camera);
+    const f = frontmostAtNdc(_t0.x, _t0.y);
+    if (f && f.def === def) return true;
+  }
+  return false;
+}
+
+// Pass 2 of the per-frame card update: keep each .card <a> aligned to its
+// mesh's projected quad (purely so the focus ring and screen-reader position
+// are right) and make it a Tab stop only while some part of the card is
+// actually exposed. Never takes pointer input — see the .card CSS comment.
+function updateCardInteraction(def) {
+  if (!def.mesh.visible) { def.el.tabIndex = -1; return; }
+  const q = cardQuad(def);
+  const cx = (q[0].x + q[1].x + q[2].x + q[3].x) / 4, cy = (q[0].y + q[1].y + q[2].y + q[3].y) / 4;
+  const ang = Math.atan2(q[1].y - q[0].y, q[1].x - q[0].x) * 180 / Math.PI;
+  const wpx = (Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y) + Math.hypot(q[2].x - q[3].x, q[2].y - q[3].y)) / 2;
+  def.el.style.transform = `translate(${cx}px, ${cy}px) rotate(${ang}deg) scale(${wpx / CARD_PLANE_OVER_BODY / CARD_CSS_WIDTH})`;
+  def.el.tabIndex = (def.runtime.opacity > CARD_MIN_OPACITY && isCardVisible(def)) ? 0 : -1;
+}
+
+function cardDebugState(def) {
+  if (def.runtime.opacity <= 0.01) return 'idle';
+  return def.el.tabIndex === 0 ? 'live' : 'covered';
+}
+
+// Pointer activation on the canvas: resolve the actual pointer position to the
+// frontmost visible surface; if that is a card, activate its real link.
+const canvasEl = renderer.domElement;
+canvasEl.addEventListener('pointermove', (e) => {
+  const r = resolvePointer(e.clientX, e.clientY);
+  canvasEl.style.cursor = r && r.kind === 'card' ? 'pointer' : '';
+});
+canvasEl.addEventListener('click', (e) => {
+  const r = resolvePointer(e.clientX, e.clientY);
+  window.__lastClick = { x: e.clientX, y: e.clientY, kind: r ? r.kind : null, id: r && r.def ? r.def.id : null };
+  if (r && r.kind === 'card') r.def.el.click();
+});
+
+// Continuous animation loop (Three.js's recommended pattern) instead of
+// on-demand render-on-scroll-event. An on-demand approach caused an
+// intermittent blank-frame capture under this environment's OS-level
+// screenshot tool (the canvas readback via toDataURL was always valid, but an
+// external screenshot could still land on a moment between an event-driven
+// render and the compositor presenting it). Rendering every frame regardless
+// of whether the scroll position changed removes that whole class of races.
+function currentScrollProgress() {
+  const rect = track.getBoundingClientRect();
+  const scrollable = rect.height - window.innerHeight;
+  return scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
+}
+// Debug-only override: forces render() to use a fixed progress value regardless
+// of actual scroll position. Used only for capturing verification screenshots
+// in an environment where this OS-level screenshot tool was found to mis-render
+// position:fixed/sticky content once the WebGL canvas + real scroll combine at
+// non-zero scroll depth (confirmed via direct canvas.toDataURL() + DOM
+// getBoundingClientRect() readbacks showing correct content and layout at every
+// scroll position — this override exists to work around the CAPTURE tool, not
+// a bug in the scroll-progress mechanism itself, which functions correctly).
+window.__forceProgress = null;
+window.addEventListener('resize', resize);
+resize();
+renderer.setAnimationLoop(() => render(window.__forceProgress !== null ? window.__forceProgress : currentScrollProgress()));
+
+function scrollToDeg(deg) {
+  const scrollable = track.offsetHeight - window.innerHeight;
+  const p = progressForDeg(deg);
+  window.scrollTo(0, scrollable * p);
+}
+document.querySelectorAll('.markers button[data-deg]').forEach((btn) => {
+  btn.addEventListener('click', () => scrollToDeg(Number(btn.dataset.deg)));
+});
+document.getElementById('mStart').addEventListener('click', () => {
+  window.scrollTo(0, 0);
+  render(0);
+});
+window.addEventListener('keydown', (e) => {
+  if ((e.key === 'h' || e.key === 'H') && !e.metaKey && !e.ctrlKey && !e.altKey && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) {
+    document.documentElement.classList.toggle('clean');
+  }
+});
+document.getElementById('mKey').addEventListener('click', () => {
+  window.scrollTo(0, (track.offsetHeight - window.innerHeight) * CARD_KEYFRAME_PROGRESS);
+});
+
+// expose for automated testing (matches the previous pass's debug hooks)
+window.render = render;
+window.__debug = {
+  baseShell, lidShell, exteriorMat, interiorFloorMat, frameMat, fabricBaseMat, skyMat, keyLight, THREE, fallGroup, camera, scene, renderer, lidPivot,
+  CARD_DEFS, sideCaseL, sideCaseR, orbitRing, LAYOUTS, assemblyKey, cardQuad, resolvePointer, frontmostAtNdc,
+  assemblyScreenBounds, blendedLayout, CARD_KEYFRAME_PROGRESS,
+  get layoutMobileT() { return layoutMobileT; }, get lastBounds() { return lastBounds; },
+};
+window.scrollToDeg = scrollToDeg;
+window.progressForDeg = progressForDeg;
+</script>
+</body>
+</html>
