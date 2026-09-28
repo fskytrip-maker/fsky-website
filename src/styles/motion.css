@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Motion: pre-animation ("hidden") states
+   --------------------------------------------------------------------------
+   These only apply while <html> carries `.js-motion`, which is added only when
+   the user has NOT asked for reduced motion and JS is running. Without it
+   every element is simply visible. GSAP (src/motion/initMotion.js) animates
+   FROM these states; if GSAP fails, `.js-motion` is removed so nothing stays
+   hidden.
+
+   Vocabulary (add as data-attributes in markup):
+     data-reveal="text"    masked word-by-word rise      (RevealText component)
+     data-reveal="fade"    fade + small rise, batched    (any element)
+     data-reveal="line"    hairline draws left → right
+     data-reveal="image"   clip-path wipe + inner scale  (.media wrapper)
+     data-scrub="words"    words brighten with scroll    (ScrubText component)
+     data-parallax         inner layer drifts (desktop only)
+     data-marquee          large type slides sideways with scroll
+     data-progress         vertical line grows with scroll
+   ========================================================================== */
+
+.js-motion [data-reveal='fade'] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.js-motion [data-reveal='line'] {
+  transform: scaleX(0);
+}
+
+.js-motion [data-reveal='image'] {
+  clip-path: inset(100% 0 0 0);
+}
+
+.js-motion [data-reveal='image'] .media__inner {
+  transform: scale(1.18);
+}
+
+.js-motion [data-scrub='words'] .sw {
+  opacity: 0.16;
+}
+
+.js-motion [data-progress] {
+  transform: scaleY(0);
+}
+
+/* ---- Masked text (RevealText) --------------------------------------------- */
+
+.rt-line {
+  display: block;
+}
+
+.rt-word {
+  display: inline-block;
+  vertical-align: top;
+  /* Mask: hides the word while it sits below its baseline. The padding keeps
+     ascenders/descenders from being clipped. */
+  overflow: hidden;
+  padding: 0.08em 0.02em 0.14em;
+  margin: -0.08em -0.02em -0.14em;
+}
+
+.rt-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+.js-motion [data-reveal='text'] .rt-inner {
+  transform: translateY(112%);
+}
+
+/* ---- Large sliding type --------------------------------------------------- */
+
+.marquee {
+  overflow: hidden;
+}
+
+.marquee__track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee__group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}

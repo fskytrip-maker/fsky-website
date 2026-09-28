@@ -1,0 +1,98 @@
+.hero {
+  position: relative;
+  padding-top: var(--header-h);
+  background: var(--bg);
+  overflow: clip;
+}
+
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - var(--header-h) - clamp(64px, 10vw, 140px));
+  padding-top: clamp(20px, 3vw, 36px);
+}
+
+.hero__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+}
+
+.hero__body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: clamp(32px, 6vw, 96px);
+}
+
+.hero__title {
+  position: relative;
+  z-index: 1;
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+}
+
+/* Image slot: sits behind the headline, offset to the right (desktop). On
+   small screens it becomes a compact block under the headline. */
+.hero__media {
+  width: min(58vw, 260px);
+  margin-top: clamp(28px, 6vw, 48px);
+  margin-left: auto;
+}
+
+.hero__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: clamp(28px, 4vw, 56px);
+}
+
+.hero__lead {
+  max-width: 30em;
+  font-size: var(--fs-lead);
+  line-height: 1.8;
+}
+
+.hero__scroll {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero__scroll-line {
+  display: block;
+  width: 48px;
+  height: 1px;
+  background: currentColor;
+}
+
+.hero__ticker {
+  padding-bottom: clamp(20px, 3vw, 40px);
+  color: var(--fg);
+}
+
+@media (min-width: 768px) {
+  .hero__media {
+    width: min(30vw, 300px);
+  }
+
+  .hero__foot {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero__media {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: clamp(240px, 22vw, 380px);
+    margin: 0;
+    translate: 0 -46%;
+  }
+}

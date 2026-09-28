@@ -1,0 +1,19 @@
+.marquee__item {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 48px);
+  padding-right: clamp(20px, 3vw, 48px);
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: clamp(2rem, 1rem + 5vw, 6.5rem);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.marquee__sep {
+  width: clamp(24px, 4vw, 72px);
+  height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+}

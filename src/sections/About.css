@@ -1,0 +1,22 @@
+.about__statement {
+  max-width: 22em;
+  font-size: var(--fs-statement);
+  line-height: 1.22;
+  letter-spacing: -0.03em;
+}
+
+.about__body {
+  display: grid;
+  gap: 1.4em;
+  margin-top: clamp(48px, 7vw, 112px);
+  max-width: 34em;
+  color: var(--muted);
+}
+
+@media (min-width: 1024px) {
+  .about__body {
+    margin-left: calc(100% / 12 * 6);
+    max-width: none;
+    padding-right: calc(100% / 12 * 2);
+  }
+}

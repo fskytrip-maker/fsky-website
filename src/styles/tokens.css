@@ -1,0 +1,91 @@
+/* ==========================================================================
+   FSKY design tokens
+   --------------------------------------------------------------------------
+   The visual direction is NOT final. Everything visual that may change lives
+   here (colour, type, spacing, motion). Components only read these variables,
+   so a redesign should start in this file, not in component CSS.
+   ========================================================================== */
+
+:root {
+  /* ---- Colour: raw palette ------------------------------------------------ */
+  --c-black: #000000;
+  --c-ink: #0a0a0a;
+  --c-paper: #f4f2ee; /* off-white */
+
+  /* ---- Colour: semantic (overridden per section via [data-theme]) --------- */
+  --bg: var(--c-black);
+  --fg: var(--c-paper);
+  --muted: rgb(244 242 238 / 0.56);
+  --line: rgb(244 242 238 / 0.18);
+  --surface: #101010; /* placeholder covers, subtle panels */
+  /* Accent is intentionally undecided: it currently equals the foreground.
+     Point this at a real colour once one is chosen. */
+  --accent: var(--fg);
+
+  /* ---- Typography --------------------------------------------------------- */
+  /* No web font is loaded yet (keeps the first version light). To adopt one,
+     load it in index.html / @font-face and change these two variables. */
+  --font-display:
+    'Helvetica Neue', Helvetica, Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+  --font-body:
+    'Helvetica Neue', Helvetica, Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --weight-display: 500;
+  --tracking-display: -0.045em;
+  --tracking-label: 0.14em;
+
+  /* Fluid type scale (min, fluid, max). Sizes step down deliberately on
+     small screens rather than just shrinking. */
+  --fs-display: clamp(2.75rem, 0.6rem + 14vw, 10.5rem);
+  --fs-title: clamp(2.5rem, 0.9rem + 7.6vw, 8rem);
+  --fs-statement: clamp(1.625rem, 0.9rem + 2.9vw, 3.5rem);
+  --fs-h3: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+  --fs-lead: clamp(1rem, 0.9rem + 0.45vw, 1.25rem);
+  --fs-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
+  --fs-small: 0.8125rem;
+  --fs-label: 0.6875rem;
+
+  --lh-display: 0.95;
+  --lh-title: 1;
+  --lh-body: 1.85; /* generous for Japanese body text */
+
+  /* ---- Layout ------------------------------------------------------------- */
+  --gutter: clamp(20px, 4vw, 56px);
+  --max-width: 1680px;
+  --section-y: clamp(96px, 14vw, 220px);
+  --gap: clamp(16px, 2vw, 32px);
+  --header-h: 64px;
+
+  /* ---- Shape -------------------------------------------------------------- */
+  --radius: 0; /* editorial: square by default */
+  --border: 1px solid var(--line);
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --dur-fast: 0.25s;
+  --dur: 0.6s;
+  --dur-slow: 0.9s;
+
+  @media (min-width: 768px) {
+    --header-h: 76px;
+  }
+
+  /* From tablet-landscape up the hero headline shares the row with the image
+     slot, so it scales more gently than on phones. */
+  @media (min-width: 1024px) {
+    --fs-display: clamp(6rem, 0.6rem + 11vw, 10.5rem);
+  }
+}
+
+/* Inverted section theme (off-white ground, black type). */
+[data-theme='light'] {
+  --bg: var(--c-paper);
+  --fg: var(--c-ink);
+  --muted: rgb(10 10 10 / 0.58);
+  --line: rgb(10 10 10 / 0.2);
+  --surface: #e6e3dd;
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Temporary favicon: replace when the FSKY mark is finalized. -->
+  <rect width="64" height="64" fill="#000"/>
+  <path d="M20 46V18h24v6H27v5h14v6H27v11z" fill="#f4f2ee"/>
+</svg>
