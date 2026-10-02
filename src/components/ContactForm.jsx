@@ -6,14 +6,22 @@ import Arrow from './Arrow'
 import './ContactForm.css'
 
 /**
- * Inquiry form. Sends to the form service set in data/site.js
- * (contact.form.endpoint — e.g. a Formspree / formrun form URL), which then
- * emails the inquiry. Until an endpoint is set, it says so instead of
+ * Inquiry form. Sends to the Formspree form set in data/site.js
+ * (contact.form.endpoint), which emails the inquiry to the studio. Until an endpoint is set, it says so instead of
  * pretending to send.
  *
  * Choosing a service in the Services section (motion/inquire.js) preselects
  * it here.
  */
+// The email shows the service's Japanese name, not its internal id.
+function toPayload(formEl) {
+  const data = new FormData(formEl)
+  const id = data.get('service')
+  const service = activeServices.find((s) => s.id === id)
+  data.set('service', service ? service.titleJa : 'その他')
+  return data
+}
+
 export default function ContactForm() {
   const { form } = contact
   const uid = useId()
@@ -42,7 +50,7 @@ export default function ContactForm() {
     try {
       const response = await fetch(form.endpoint, {
         method: 'POST',
-        body: new FormData(formEl),
+        body: toPayload(formEl),
         headers: { Accept: 'application/json' },
       })
       if (!response.ok) throw new Error(String(response.status))
@@ -137,6 +145,10 @@ export default function ContactForm() {
               placeholder="ご依頼の内容、ご予算やご希望の時期など、お気軽にご記入ください。"
             />
           </div>
+
+          {/* Formspree: subject line of the email it sends you. (Replying to
+              that email goes to the address in the "email" field.) */}
+          <input type="hidden" name="_subject" value={form.subject} />
 
           {/* Spam trap: invisible to people, filled in by bots. */}
           <input className="cform__trap" type="text" name="_gotcha" tabIndex={-1} autoComplete="off" />

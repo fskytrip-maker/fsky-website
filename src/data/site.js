@@ -87,10 +87,11 @@ export const contact = {
   form: {
     heading: 'CONTACT FORM',
     sub: 'フォームでのお問い合わせ',
-    // URL of the form service that receives the inquiry and emails it to you
-    // (e.g. Formspree: 'https://formspree.io/f/xxxxxxx'). null = not set up
-    // yet: the form is shown, but says it can't send yet.
-    endpoint: null,
+    // Formspree form that receives the inquiry and emails it to you. null =
+    // not set up: the form is shown, but says it can't send yet.
+    endpoint: 'https://formspree.io/f/mwlpdyne',
+    // Subject line of the notification email.
+    subject: '【FSKY】ウェブサイトからのお問い合わせ',
     privacyNote: '送信いただいた内容は、プライバシーポリシーに従って取り扱います。',
     privacyHref: '/privacy/',
     submit: '送信する',
