@@ -1,0 +1,39 @@
+.wt-line {
+  display: block;
+}
+
+.wt-char {
+  position: relative;
+  display: inline-block;
+}
+
+.wt-base {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+/* While writing, the real letters are hidden under their SVG copies. */
+.wt.is-writing .wt-char {
+  color: transparent;
+}
+
+.wt-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wt-svg text {
+  font: inherit;
+  letter-spacing: 0;
+  fill: var(--fg);
+  stroke: var(--fg);
+  stroke-width: 1.4px;
+  stroke-linejoin: round;
+}

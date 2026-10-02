@@ -1,8 +1,8 @@
 import lineIcon from '../assets/line-icon.png'
 import Arrow from '../components/Arrow'
 import ContactForm from '../components/ContactForm'
-import RevealText from '../components/RevealText'
 import Section, { SectionHead } from '../components/Section'
+import WriteTitle from '../components/WriteTitle'
 import { contact } from '../data/site'
 import './Contact.css'
 
@@ -19,7 +19,7 @@ export default function Contact() {
 
         <div className="contact__grid">
           <h2 id="contact-title" className="contact__title display">
-            <RevealText text={contact.title} />
+            <WriteTitle text={contact.title} />
           </h2>
 
           <p className="contact__lead" data-reveal="fade">
