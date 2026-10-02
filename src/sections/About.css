@@ -1,22 +1,69 @@
 .about__statement {
   max-width: 22em;
-  font-size: var(--fs-statement);
-  line-height: 1.22;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.875rem, 1rem + 3.6vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1.5; /* Japanese needs more leading than the old English line */
+  letter-spacing: 0.02em;
+  /* Japanese line breaking: phrase-aware where supported (Chrome/Edge), so
+     words like デザイン never split; elsewhere the default, with strict
+     kinsoku so no line starts with 、 or 。. */
+  line-break: strict;
+  word-break: auto-phrase;
 }
 
+.about__statement-en {
+  max-width: 36em;
+  margin-top: clamp(14px, 1.6vw, 22px);
+  color: var(--muted);
+  font-size: clamp(0.9375rem, 0.85rem + 0.5vw, 1.25rem);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+.about__statement .is-accent {
+  color: var(--accent);
+}
+
+/* Body: large, bold lines (not muted small print), with the key ideas set
+   bigger still in colour. Left-aligned and full width. */
 .about__body {
   display: grid;
-  gap: 1.4em;
-  margin-top: clamp(48px, 7vw, 112px);
-  max-width: 34em;
-  color: var(--muted);
+  gap: clamp(28px, 3.4vw, 48px);
+  margin-top: clamp(64px, 9vw, 140px);
+  max-width: 1120px;
 }
 
-@media (min-width: 1024px) {
-  .about__body {
-    margin-left: calc(100% / 12 * 6);
-    max-width: none;
-    padding-right: calc(100% / 12 * 2);
+.about__line {
+  font-size: clamp(1.0625rem, 0.9rem + 0.8vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+  color: var(--fg);
+  line-break: strict;
+  word-break: auto-phrase;
+}
+
+.about__line--big {
+  font-family: var(--font-display);
+  font-size: clamp(1.625rem, 1rem + 2.8vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+.about__line--big.is-sky {
+  color: var(--accent);
+}
+
+.about__line--big.is-blue {
+  color: var(--accent-2);
+}
+
+/* Phones: let the long lines wrap naturally instead of at the wide-screen
+   breaks. */
+@media (max-width: 767px) {
+  .about__line br,
+  .about__statement .sw-br {
+    display: none;
   }
 }

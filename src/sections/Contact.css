@@ -6,13 +6,86 @@
 .contact__grid {
   display: grid;
   gap: clamp(28px, 4vw, 48px);
-  margin-top: clamp(40px, 6vw, 96px);
 }
 
 .contact__lead {
   max-width: 28em;
   font-size: var(--fs-lead);
   line-height: 1.8;
+}
+
+/* Phone / LINE blocks: big heading, small Japanese sub-line, one button. */
+.contact__channels {
+  display: grid;
+  gap: clamp(40px, 6vw, 64px);
+}
+
+.contact__channel-title {
+  font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.contact__channel-sub {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.contact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: min(100%, 420px);
+  min-height: 72px;
+  margin-top: 22px;
+  padding: 12px 24px;
+  border: 1px solid currentColor;
+  border-radius: 14px;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.625rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.contact-btn__icon {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+}
+
+/* The official LINE icon: a touch larger, its own proportions kept. */
+.contact-btn__icon--line {
+  width: auto;
+  height: 1.5em;
+}
+
+.contact-btn__arrow {
+  font-size: 0.8em;
+}
+
+/* LINE: a solid white button, like the reference. */
+.contact-btn--line {
+  background: var(--c-paper);
+  border-color: var(--c-paper);
+  color: var(--c-ink);
+}
+
+/* Hover: fill in ink (the section sits on the sky-blue ground, where the
+   accent colour wouldn't show). */
+@media (hover: hover) {
+  .contact-btn:hover,
+  .contact-btn--line:hover {
+    background: var(--c-ink);
+    border-color: var(--c-ink);
+    color: var(--c-paper);
+  }
 }
 
 .contact__details {
@@ -53,18 +126,17 @@
     align-items: start;
   }
 
-  .contact__lead {
+  /* Left: title, lead, phone / LINE. Right: the form, its top level with
+     the title's. */
+  .contact__title,
+  .contact__lead,
+  .contact__channels {
     grid-column: 1 / span 5;
   }
 
-  .contact__cta {
-    grid-column: 1 / span 5;
-    grid-row: 2;
-  }
-
-  .contact__details {
+  .contact__form {
     grid-column: 7 / span 6;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
   }
 
   .contact__details > div {

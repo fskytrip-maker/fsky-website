@@ -11,6 +11,9 @@
   --c-black: #000000;
   --c-ink: #0a0a0a;
   --c-paper: #f4f2ee; /* off-white */
+  /* Near-black used by Header + Hero only (per brand direction). Other
+     sections keep --c-black/--bg untouched. */
+  --c-void: #06090f;
 
   /* ---- Colour: semantic (overridden per section via [data-theme]) --------- */
   --bg: var(--c-black);
@@ -18,9 +21,20 @@
   --muted: rgb(244 242 238 / 0.56);
   --line: rgb(244 242 238 / 0.18);
   --surface: #101010; /* placeholder covers, subtle panels */
-  /* Accent is intentionally undecided: it currently equals the foreground.
-     Point this at a real colour once one is chosen. */
-  --accent: var(--fg);
+  /* Accent: locked to the brand's single sky-blue (no gradients/metallic). */
+  --accent: #72d3f9;
+  --accent-rgb: 114 211 249;
+  /* Secondary highlight for large coloured copy only (ABOUT): the blue-violet
+     of the silk folds, a step deeper than --accent. */
+  --accent-2: #8a9bff;
+
+  /* Hero background only — deep navy/blue tones for the silk-like ambient
+     layer (see HeroSilk). Kept clearly darker than --accent so the mark
+     always reads as the brightest thing on screen. */
+  --silk-1-rgb: 8 28 51; /* deepest, near --c-void */
+  --silk-2-rgb: 15 44 78;
+  --silk-3-rgb: 28 69 112;
+  --silk-4-rgb: 42 111 168; /* brightest fold highlight, still << accent */
 
   /* ---- Typography --------------------------------------------------------- */
   /* No web font is loaded yet (keeps the first version light). To adopt one,
@@ -88,4 +102,15 @@
   --muted: rgb(10 10 10 / 0.58);
   --line: rgb(10 10 10 / 0.2);
   --surface: #e6e3dd;
+}
+
+/* Sky theme (the SkyZone the silk transition turns into: Contact + footer):
+   ink type on the brand sky blue. The gradient + light motion is in
+   components/SkyZone.css. */
+[data-theme='sky'] {
+  --bg: #72d3f9;
+  --fg: var(--c-ink);
+  --muted: rgb(10 10 10 / 0.62);
+  --line: rgb(10 10 10 / 0.22);
+  --surface: rgb(255 255 255 / 0.3);
 }

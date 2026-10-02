@@ -14,3 +14,11 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+
+// Dev only: the scroll animations are wired once, to the elements present at
+// startup. A hot update can swap those elements for new, still-hidden ones
+// that nothing animates (e.g. text stuck invisible after editing copy), so
+// reload the page after every update instead. No effect on the built site.
+if (import.meta.hot) {
+  import.meta.hot.on('vite:afterUpdate', () => window.location.reload())
+}

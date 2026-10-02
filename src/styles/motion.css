@@ -10,6 +10,8 @@
    Vocabulary (add as data-attributes in markup):
      data-reveal="text"    masked word-by-word rise      (RevealText component)
      data-reveal="fade"    fade + small rise, batched    (any element)
+     data-reveal="from-left" / "from-right"
+                           fade + slide in sideways, batched
      data-reveal="line"    hairline draws left → right
      data-reveal="image"   clip-path wipe + inner scale  (.media wrapper)
      data-scrub="words"    words brighten with scroll    (ScrubText component)
@@ -21,6 +23,16 @@
 .js-motion [data-reveal='fade'] {
   opacity: 0;
   transform: translateY(24px);
+}
+
+.js-motion [data-reveal='from-left'] {
+  opacity: 0;
+  transform: translateX(-48px);
+}
+
+.js-motion [data-reveal='from-right'] {
+  opacity: 0;
+  transform: translateX(48px);
 }
 
 .js-motion [data-reveal='line'] {

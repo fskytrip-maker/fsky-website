@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 100;
-  color: #f4f2ee; /* header always sits on black, whatever section is below */
+  color: #f4f2ee; /* header always sits on near-black, whatever section is below */
 }
 
 .header__bar {
@@ -12,7 +12,9 @@
   align-items: center;
   justify-content: space-between;
   height: var(--header-h);
-  padding-inline: var(--gutter);
+  /* Explicit side margins for the bar itself (~20px mobile / ~40px desktop),
+     independent of the page's own --gutter. */
+  padding-inline: 20px;
   background: transparent;
   border-bottom: 1px solid transparent;
   transition:
@@ -22,17 +24,22 @@
 
 .header.is-scrolled .header__bar,
 .header.is-open .header__bar {
-  background: var(--c-black);
+  background: var(--c-void);
   border-bottom-color: rgb(244 242 238 / 0.14);
 }
 
-/* Wordmark slot: swap for an <img>/<svg> when the logo is finalized. */
+/* Top-left, both sizes. */
 .header__logo {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.375rem;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  line-height: 0;
+}
+
+/* Sized by the VISIBLE mark (the asset is already cropped tight to it — see
+   src/assets/fsky-mark.png), so these widths are the mark itself, not an
+   image canvas with invisible padding inside it. */
+.header__logo img {
+  display: block;
+  width: clamp(44px, 10vw, 56px);
+  height: auto;
 }
 
 .header__nav {
@@ -41,15 +48,22 @@
 
 .header__nav ul {
   display: flex;
-  gap: clamp(20px, 2.6vw, 44px);
+  gap: clamp(24px, 2.8vw, 48px);
 }
 
 .header__nav a {
   position: relative;
   display: inline-block;
   padding-block: 8px;
-  font-size: var(--fs-label);
+  font-size: clamp(0.8125rem, 1vw, 0.9375rem);
   letter-spacing: var(--tracking-label);
+}
+
+/* CONTACT carries the site arrow (components/Arrow) after its label. */
+.header__contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
 }
 
 .header__nav a::after {
@@ -71,6 +85,8 @@
   }
 }
 
+/* Mobile-only toggle, right side (logo left + toggle right = the two flex
+   children on mobile, so justify-content:space-between alone positions it). */
 .header__toggle {
   min-height: 44px;
   min-width: 44px;
@@ -87,7 +103,7 @@
   display: flex;
   align-items: flex-end;
   padding: calc(var(--header-h) + 24px) var(--gutter) max(32px, env(safe-area-inset-bottom));
-  background: var(--c-black);
+  background: var(--c-void);
   clip-path: inset(0 0 100% 0);
   visibility: hidden;
   transition:
@@ -138,8 +154,16 @@
 }
 
 @media (min-width: 1024px) {
+  .header__bar {
+    padding-inline: 40px;
+  }
+
+  .header__logo img {
+    width: clamp(70px, 5.5vw, 90px);
+  }
+
   .header__nav {
-    display: block;
+    display: flex;
   }
 
   .header__toggle,

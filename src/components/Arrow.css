@@ -1,0 +1,40 @@
+/* A 1em box that clips the two glyphs, so the hover swap reads as one arrow
+   shooting out and the next one arriving. */
+.arrow {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: -0.12em;
+}
+
+.arrow__glyph {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.arrow__glyph--next {
+  transform: translate(-110%, 110%);
+}
+
+@media (hover: hover) {
+  .arrow-host:hover .arrow__glyph {
+    transform: translate(110%, -110%);
+  }
+
+  .arrow-host:hover .arrow__glyph--next {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow__glyph {
+    transition: none;
+  }
+}

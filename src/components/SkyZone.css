@@ -1,0 +1,101 @@
+/* No background of its own: during the silk transition the zone overlaps
+   the transition's last screen, which must stay visible until the ground
+   (below) fades in. */
+.sky-zone {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Spans the whole zone; the sticky, screen-sized view inside keeps the
+   gradient fixed to the screen. --wipe-in: 1 unless the silk transition is
+   fading it in. */
+.sky-zone__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--wipe-in, 1);
+}
+
+/* The sections inside let the ground show through. */
+.sky-zone .section__bg {
+  background: transparent;
+}
+
+/* With the transition, reach up over its last screen too, so the gradient
+   can take over the whole screen while the transition is still pinned. */
+.js-motion .silk-wipe + .sky-zone > .sky-zone__bg {
+  top: -100vh;
+  top: -100svh;
+}
+
+.sky-zone__view {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh;
+  overflow: hidden;
+  background: linear-gradient(
+    160deg,
+    #b4ecff 0%,
+    #72d3f9 42%,
+    #4cb2f3 78%,
+    #3d93e6 100%
+  );
+}
+
+.sky-zone__glow {
+  position: absolute;
+  width: 75vmax;
+  height: 75vmax;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.sky-zone__glow--a {
+  top: -30vmax;
+  left: -20vmax;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.75) 0%, rgb(255 255 255 / 0) 62%);
+  animation: sky-drift-a 22s ease-in-out infinite alternate;
+}
+
+.sky-zone__glow--b {
+  right: -28vmax;
+  bottom: -32vmax;
+  background: radial-gradient(circle, rgb(40 110 230 / 0.55) 0%, rgb(40 110 230 / 0) 62%);
+  animation: sky-drift-b 26s ease-in-out infinite alternate;
+}
+
+.sky-zone__glow--c {
+  top: 20%;
+  left: 35%;
+  width: 55vmax;
+  height: 55vmax;
+  background: radial-gradient(circle, rgb(170 240 255 / 0.6) 0%, rgb(170 240 255 / 0) 60%);
+  animation: sky-drift-c 18s ease-in-out infinite alternate;
+}
+
+@keyframes sky-drift-a {
+  to {
+    transform: translate(28vmax, 18vmax) scale(1.15);
+  }
+}
+
+@keyframes sky-drift-b {
+  to {
+    transform: translate(-30vmax, -16vmax) scale(0.9);
+  }
+}
+
+@keyframes sky-drift-c {
+  to {
+    transform: translate(-26vmax, 10vmax) scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-zone__glow {
+    animation: none;
+  }
+}
+

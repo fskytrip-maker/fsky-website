@@ -10,6 +10,15 @@
   line-height: var(--lh-title);
 }
 
+/* Japanese heading, small under the big English one. */
+.services__title-ja {
+  margin-top: clamp(10px, 1.2vw, 18px);
+  color: var(--muted);
+  font-size: clamp(0.9375rem, 0.85rem + 0.5vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
 .services__list {
   border-bottom: var(--border);
 }
@@ -18,11 +27,12 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 1fr;
+  /* Phones: number + ring share the first row; title and text span below. */
+  grid-template-columns: 1fr auto;
   gap: 14px 24px;
   padding-block: clamp(28px, 4vw, 56px);
-  /* Bleed into the gutter so the hover fill has breathing room while the text
-     stays aligned with the rest of the page. */
+  /* Bleed into the gutter so the hover underline has breathing room while
+     the text stays aligned with the rest of the page. */
   margin-inline: calc(var(--gap) * -1);
   padding-inline: var(--gap);
   border-top: var(--border);
@@ -33,13 +43,53 @@
   grid-row: 1;
 }
 
+.service__title,
+.service__detail {
+  grid-column: 1 / -1;
+}
+
+/* Neon ring badge (ServiceOrb): the canvas is larger than the badge so its
+   glow can spill past the edge without affecting layout. */
+.service__orb {
+  position: relative;
+  grid-row: 1;
+  grid-column: 2;
+  width: 48px;
+  height: 48px;
+}
+
+.service__orb canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 170%;
+  height: 170%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .service__title {
-  font-size: var(--fs-h3);
-  line-height: 1.1;
+  font-size: clamp(1.875rem, 1rem + 3.4vw, 4rem);
+  line-height: 1.05;
   letter-spacing: -0.03em;
 }
 
+/* Japanese service name under the big English one. */
+.service__title-ja {
+  display: block;
+  margin-top: 0.6em;
+  font-family: var(--font-body);
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
 .service__detail {
+  /* Phrase-aware Japanese wrapping (Chrome/Edge); strict kinsoku elsewhere. */
+  line-break: strict;
+  word-break: auto-phrase;
   display: grid;
   gap: 18px;
   max-width: 36em;
@@ -50,35 +100,42 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px 20px;
+  /* Japanese tags: a touch larger and tighter than the default label. */
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
 }
 
-/* Hover: the row fills with the foreground colour (desktop pointers only). */
-.service::before {
+/* Hover (desktop pointers only): the row's type turns sky blue, an accent
+   underline draws in, and the ring fills into a glassy sphere (see ServiceOrb). */
+.service::after {
   content: '';
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--fg);
-  transform: translateY(101%);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
   transition: transform var(--dur) var(--ease-out);
 }
 
 @media (hover: hover) {
-  .service {
+  .service,
+  .service__detail,
+  .service__no {
     transition: color var(--dur-fast) var(--ease-out);
   }
 
-  .service:hover {
-    color: var(--bg);
-  }
-
-  .service:hover::before {
-    transform: none;
-  }
-
+  .service:hover,
   .service:hover .service__detail,
-  .service:hover .service__no {
-    color: inherit;
+  .service:hover .service__no,
+  .service:hover .service__title-ja {
+    color: var(--accent);
+  }
+
+  .service:hover::after {
+    transform: none;
   }
 
   .service__title {
@@ -98,7 +155,7 @@
   }
 
   .service {
-    grid-template-columns: 1fr 6fr 5fr;
+    grid-template-columns: 1fr 6fr 5fr auto;
     align-items: start;
   }
 
@@ -106,4 +163,42 @@
     grid-row: auto;
     padding-top: 0.6em;
   }
+
+  .service__title,
+  .service__detail {
+    grid-column: auto;
+  }
+
+  .service__orb {
+    grid-row: auto;
+    grid-column: auto;
+    align-self: center;
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* ---- Each row links to the contact form ---------------------------------- */
+
+/* Transparent link over the whole row. */
+.service__toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.service__toggle:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -4px;
+}
+
+/* "このサービスについて相談する ↗" hint. */
+.service__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--fg);
 }

@@ -1,6 +1,6 @@
 /**
  * Base wrapper for every page section.
- *   theme       'dark' (default) | 'light'  — swaps the semantic colour tokens
+ *   theme       'dark' (default) | 'light' | any [data-theme] in tokens.css
  *   panelIn     desktop-only: the section background widens into place as it
  *               enters (a light panel sliding out of the dark page)
  *
@@ -19,7 +19,7 @@ export default function Section({
     <section
       id={id}
       className={`section ${className}`.trim()}
-      data-theme={theme === 'light' ? 'light' : undefined}
+      data-theme={theme === 'dark' ? undefined : theme}
       data-section-in={panelIn ? '' : undefined}
       {...rest}
     >

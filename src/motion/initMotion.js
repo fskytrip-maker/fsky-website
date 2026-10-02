@@ -23,6 +23,32 @@ export function initMotion(root) {
     (context) => {
       const { desktop } = context.conditions
 
+      q(root, '[data-hero-tagline]').forEach((el) => {
+        gsap.fromTo(el,
+          { opacity: 0, y: 14 },
+          {
+            opacity: 1, y: 0, duration: 1.15, delay: 0.25,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 96%', once: true },
+          },
+        )
+      })
+
+      // -- Silk behind About/Services: dims once the Hero has scrolled away ---
+      q(root, '[data-silk-sticky]').forEach((el) => {
+        const hero = root.querySelector('.hero')
+        if (!hero) return
+        gsap.fromTo(
+          el,
+          { opacity: 1 },
+          {
+            opacity: 0.55,
+            ease: 'none',
+            scrollTrigger: { trigger: hero, start: 'bottom bottom', end: 'bottom top', scrub: true },
+          },
+        )
+      })
+
       // -- Masked text: words rise out of their line mask ---------------------
       q(root, '[data-reveal="text"]').forEach((el) => {
         const words = el.querySelectorAll('.rt-inner')
@@ -44,7 +70,11 @@ export function initMotion(root) {
       })
 
       // -- Fades: batched so elements entering together cascade ---------------
-      const fades = q(root, '[data-reveal="fade"]')
+      // (from-left / from-right slide in sideways instead of rising)
+      const fades = q(
+        root,
+        '[data-reveal="fade"], [data-reveal="from-left"], [data-reveal="from-right"]',
+      )
       if (fades.length) {
         ScrollTrigger.batch(fades, {
           start: 'top 96%',
@@ -52,6 +82,7 @@ export function initMotion(root) {
           onEnter: (batch) =>
             gsap.to(batch, {
               opacity: 1,
+              x: 0,
               y: 0,
               duration: 0.9,
               ease: 'power3.out',

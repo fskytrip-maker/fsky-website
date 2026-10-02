@@ -1,59 +1,86 @@
 .hero {
   position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  /* The Hero must always fill at least one full screen (ABOUT stays below
+     the fold until the visitor scrolls). `100vh` is the fallback for
+     browsers without small-viewport units; `100svh` (the viewport with
+     mobile browser chrome fully shown) then overrides it where supported —
+     unsupported values are simply ignored, so this degrades safely. */
+  min-height: 100vh;
+  min-height: 100svh;
   padding-top: var(--header-h);
-  background: var(--bg);
   overflow: clip;
+  /* Transparent: the near-black ground and the silk folds behind the Hero
+     belong to SilkZone, which runs on behind About and Services. */
 }
 
-.hero__inner {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100svh - var(--header-h) - clamp(64px, 10vw, 140px));
-  padding-top: clamp(20px, 3vw, 36px);
-}
-
-.hero__meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 14px;
-}
-
-.hero__body {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-block: clamp(32px, 6vw, 96px);
-}
-
-.hero__title {
+.hero__stage {
   position: relative;
   z-index: 1;
-  font-size: var(--fs-display);
-  line-height: var(--lh-display);
+  width: min(88vw, 1760px);
+  margin-inline: auto;
 }
 
-/* Image slot: sits behind the headline, offset to the right (desktop). On
-   small screens it becomes a compact block under the headline. */
-.hero__media {
-  width: min(58vw, 260px);
-  margin-top: clamp(28px, 6vw, 48px);
-  margin-left: auto;
+/* The mark+tagline block (not .hero__bottom): an auto top margin here and
+   .hero__bottom's auto top margin below split the Hero's leftover height
+   evenly above and below this block, so it settles in the upper-middle
+   instead of sticking to the header with all the slack dumped underneath. */
+.hero__stage:not(.hero__bottom) {
+  margin-top: auto;
 }
 
-.hero__foot {
+.hero__mark {
+  padding-top: clamp(16px, 2.4vw, 32px);
+}
+
+.hero__mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Real alpha, cropped tight to the glyph — composites normally, no
+     backdrop/blend-mode trick needed; the silk layer shows through freely. */
+}
+
+.hero__tagline {
+  margin-top: clamp(12px, 1.5vw, 24px);
+  /* Right-aligned to the lockup's right edge (both share .hero__stage). */
+  text-align: right;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: rgb(244 242 238 / 0.92);
+  font-size: clamp(24px, 5vw, 30px);
+}
+
+@media (min-width: 1024px) {
+  .hero__tagline {
+    font-size: clamp(40px, 3vw, 56px);
+  }
+}
+
+.hero__bottom {
+  /* Auto, paired with .hero__stage's own auto top margin above: together
+     they absorb the Hero's leftover height evenly, keeping this row
+     anchored near the bottom instead of trailing extra empty space below
+     it (min-height:100svh no longer caps out on tall/short viewports). */
+  margin-top: auto;
+  padding-bottom: max(clamp(24px, 5vh, 56px), env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding-bottom: clamp(28px, 4vw, 56px);
+  gap: clamp(18px, 3vw, 28px);
 }
 
-.hero__lead {
-  max-width: 30em;
-  font-size: var(--fs-lead);
-  line-height: 1.8;
+.hero__info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hero__categories {
+  color: var(--muted);
 }
 
 .hero__scroll {
@@ -64,35 +91,127 @@
 
 .hero__scroll-line {
   display: block;
-  width: 48px;
+  width: 40px;
   height: 1px;
   background: currentColor;
 }
 
-.hero__ticker {
-  padding-bottom: clamp(20px, 3vw, 40px);
-  color: var(--fg);
+.hero__ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-@media (min-width: 768px) {
-  .hero__media {
-    width: min(30vw, 300px);
+/* ---- CTA button: rounded capsule — text on the left, arrow in a round
+   badge on the right. -------------------------------------------------- */
+
+.hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 68px;
+  padding: 10px 10px 10px 26px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+
+.hero-cta__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hero-cta__label {
+  font-size: clamp(0.9375rem, 1.3vw, 1.0625rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hero-cta__sub {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+}
+
+.hero-cta__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.hero-cta__arrow {
+  font-size: 1.4rem;
+}
+
+/* Solid: cyan capsule with a dark badge and a soft cyan glow beneath. */
+.hero-cta--solid {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--c-void);
+  box-shadow: 0 10px 32px -14px rgb(var(--accent-rgb) / 0.7);
+}
+
+.hero-cta--solid .hero-cta__sub {
+  color: rgb(6 9 15 / 0.7);
+}
+
+.hero-cta--solid .hero-cta__icon {
+  background: var(--c-void);
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .hero-cta:hover {
+    transform: translateY(-2px);
   }
 
-  .hero__foot {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
+  .hero-cta--solid:hover {
+    box-shadow: 0 14px 40px -12px rgb(var(--accent-rgb) / 0.85);
   }
 }
 
 @media (min-width: 1024px) {
-  .hero__media {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    width: clamp(240px, 22vw, 380px);
-    margin: 0;
-    translate: 0 -46%;
+  .hero__bottom {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .hero__ctas {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .hero-cta {
+    width: clamp(304px, 22vw, 360px);
+    min-height: 76px;
+    padding: 12px 12px 12px 28px;
+  }
+
+  .hero-cta__icon {
+    width: 52px;
+    height: 52px;
   }
 }

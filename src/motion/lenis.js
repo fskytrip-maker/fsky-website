@@ -32,12 +32,16 @@ export function startLenis() {
 
 export const getLenis = () => lenis
 
-/** Smooth-scroll to a section by id (Lenis if active, native otherwise). */
-export function scrollToId(id) {
+/**
+ * Smooth-scroll to a section by id (Lenis if active, native otherwise).
+ * `offset` (px, usually negative) leaves room, e.g. for the fixed header;
+ * the native path uses the target's CSS scroll-margin instead.
+ */
+export function scrollToId(id, { offset = 0 } = {}) {
   const target = document.getElementById(id)
   if (!target) return
   if (lenis) {
-    lenis.scrollTo(target, { duration: 1.4 })
+    lenis.scrollTo(target, { duration: 1.4, offset })
     return
   }
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches

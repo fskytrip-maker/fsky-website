@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { nav, site } from '../data/site'
+import fskyMark from '../assets/fsky-mark.png'
+import Arrow from './Arrow'
+import { headerContact, headerNav, nav, site } from '../data/site'
 import { scrollToId, setScrollLocked } from '../motion/lenis'
 import './Header.css'
 
@@ -85,22 +87,36 @@ export default function Header() {
   return (
     <header className={`header${scrolled ? ' is-scrolled' : ''}${open ? ' is-open' : ''}`}>
       <div className="header__bar">
+        {/* Left: official logo, top-left at all sizes */}
         <a className="header__logo" href="#top" onClick={goTop} aria-label={`${site.name} — top`}>
-          {site.name}
+          <img src={fskyMark} alt="" width={1206} height={642} loading="eager" decoding="async" />
         </a>
 
+        {/* Desktop-only, right: curated nav + contact, grouped as one row
+            (see data/site.js headerNav / headerContact) */}
         <nav className="header__nav" aria-label="Primary">
           <ul>
-            {nav.map((item) => (
+            {headerNav.map((item) => (
               <li key={item.id}>
                 <a href={`#${item.id}`} onClick={(e) => go(e, item.id)}>
                   {item.label}
                 </a>
               </li>
             ))}
+            <li>
+              <a
+                className="header__contact arrow-host"
+                href={`#${headerContact.id}`}
+                onClick={(e) => go(e, headerContact.id)}
+              >
+                {headerContact.label}
+                <Arrow />
+              </a>
+            </li>
           </ul>
         </nav>
 
+        {/* Mobile-only, right: menu toggle */}
         <button
           ref={buttonRef}
           type="button"

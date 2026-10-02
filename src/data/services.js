@@ -8,6 +8,7 @@
 //   {
 //     id: 'space',
 //     title: 'SPACE / INTERIOR DESIGN',
+//     titleJa: '空間・インテリアデザイン',
 //     description: '…',
 //     items: ['Spatial Design', 'Interior Design'],
 //     status: 'planned',
@@ -17,25 +18,25 @@ export const services = [
   {
     id: 'web',
     title: 'WEB DESIGN',
-    description:
-      'ブランドの考え方を、伝わるウェブサイトのかたちにします。（仮）',
-    items: ['Website design', 'Landing page', 'UI design'],
+    titleJa: 'ウェブデザイン',
+    description: '想いや強みが伝わる、見る人の心に届くウェブサイトをデザインします。',
+    items: ['ウェブサイト', 'LP', 'UIデザイン'],
     status: 'active',
   },
   {
     id: 'brand',
     title: 'LOGO / BRAND DESIGN',
-    description:
-      'ロゴから始まる、ぶれのないブランドの見え方をつくります。（仮）',
-    items: ['Logo design', 'Brand identity', 'Guidelines'],
+    titleJa: 'ロゴ・ブランドデザイン',
+    description: 'ロゴを軸に、ブランドの「らしさ」をかたちにし、ぶれない見え方をつくります。',
+    items: ['ロゴ', 'ブランドアイデンティティ', 'ガイドライン'],
     status: 'active',
   },
   {
     id: 'graphic',
     title: 'GRAPHIC / BUSINESS CARD DESIGN',
-    description:
-      '手に取られる場面まで考えた、グラフィックと名刺をつくります。（仮）',
-    items: ['Business card', 'Print graphics', 'Collateral'],
+    titleJa: 'グラフィック・名刺デザイン',
+    description: '名刺やチラシなど、手に取った瞬間に印象に残るグラフィックをデザインします。',
+    items: ['名刺', 'チラシ・フライヤー', '販促物'],
     status: 'active',
   },
 ]

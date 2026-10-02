@@ -1,0 +1,170 @@
+/* A light panel on the dark Contact section (like the reference). */
+.cform {
+  scroll-margin-top: calc(var(--header-h) + 24px);
+  padding: clamp(28px, 4vw, 56px);
+  border-radius: clamp(18px, 2vw, 28px);
+  background: var(--c-paper);
+  color: var(--c-ink);
+}
+
+.cform__title {
+  font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.cform__sub {
+  margin-top: 10px;
+  color: rgb(10 10 10 / 0.6);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.cform__form {
+  display: grid;
+  gap: clamp(22px, 2.6vw, 30px);
+  margin-top: clamp(28px, 3.4vw, 44px);
+}
+
+.cform__field {
+  display: grid;
+  gap: 10px;
+}
+
+.cform__field label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cform__req {
+  margin-left: 2px;
+  color: #e5484d;
+}
+
+/* Underlined fields. 16px text so phones don't zoom in on focus. */
+.cform input,
+.cform select,
+.cform textarea {
+  width: 100%;
+  padding: 12px 4px;
+  border: 0;
+  border-bottom: 1px solid rgb(10 10 10 / 0.35);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.cform textarea {
+  resize: vertical;
+  min-height: 9em;
+}
+
+.cform select {
+  appearance: none;
+  padding-right: 32px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 52%,
+    calc(100% - 8px) 52%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.cform ::placeholder {
+  color: rgb(10 10 10 / 0.38);
+}
+
+.cform input:focus,
+.cform select:focus,
+.cform textarea:focus {
+  outline: none;
+  border-bottom-color: #1b8fd0;
+  box-shadow: 0 1px 0 #1b8fd0;
+}
+
+.cform__trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.cform__message {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgb(10 10 10 / 0.06);
+  font-size: var(--fs-small);
+  line-height: 1.8;
+}
+
+.cform__message.is-done {
+  margin-top: clamp(28px, 3.4vw, 44px);
+}
+
+.cform__privacy {
+  color: rgb(10 10 10 / 0.65);
+  font-size: 0.8125rem;
+  line-height: 1.8;
+}
+
+.cform__privacy a {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+/* Submit: dark capsule with the site arrow in a sky-blue badge. */
+.cform__submit {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 64px;
+  padding: 8px 8px 8px 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-ink);
+  color: var(--c-paper);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    transform var(--dur) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.cform__submit-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--c-ink);
+  font-size: 1.2rem;
+}
+
+.cform__submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.cform__submit:focus-visible {
+  outline: 2px solid #1b8fd0;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .cform__submit:hover {
+    transform: translateY(-2px);
+  }
+}

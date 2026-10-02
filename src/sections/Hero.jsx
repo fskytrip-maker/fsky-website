@@ -1,50 +1,65 @@
-import Marquee from '../components/Marquee'
-import Media from '../components/Media'
-import RevealText from '../components/RevealText'
-import { hero, site } from '../data/site'
+import fskyLockup from '../assets/fsky-lockup.webp'
+import Arrow from '../components/Arrow'
+import { hero } from '../data/site'
+import { scrollToId } from '../motion/lenis'
 import './Hero.css'
 
-// Temporary structure: typography-led, hairlines, one image slot, one sliding
-// line of type. The hero concept is intentionally not final — swap the inside
-// of this component without touching the rest of the page.
+// The wordmark is the supplied lockup artwork (src/assets/fsky-lockup.webp,
+// cropped tight to its visible glyph — see that file's history) — no text
+// headline is set in code, so it can never drift from that image.
+// The glowing silk folds behind it come from SilkZone (see App.jsx), which
+// carries them on behind About and Services too.
 export default function Hero() {
+  const goTo = (event, id) => {
+    event.preventDefault()
+    window.history.replaceState(null, '', `#${id}`)
+    scrollToId(id)
+  }
+
   return (
-    <section id="top" className="hero" aria-label={`${site.name} — ${site.descriptor}`}>
-      <div className="container hero__inner">
-        <div className="hero__meta label" data-reveal="fade">
-          {hero.meta.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
-        </div>
-        <span className="hairline" data-reveal="line" data-delay="0.1" />
-
-        <div className="hero__body">
-          <h1 className="hero__title display">
-            <RevealText text={hero.headline} delay={0.15} />
-          </h1>
-
-          <Media
-            className="hero__media"
-            ratio="4 / 5"
-            label={hero.imageLabel}
-            parallax
-            priority
-            delay={0.5}
+    <section id="top" className="hero" aria-label="FSKY — Design Studio">
+      <div className="hero__stage">
+        <h1 className="hero__mark" data-reveal="fade">
+          <img
+            src={fskyLockup}
+            alt={hero.logoAlt}
+            width={1950}
+            height={442}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
-        </div>
-
-        <div className="hero__foot">
-          <p className="hero__lead" data-reveal="fade">
-            {hero.lead}
-          </p>
-          <p className="hero__scroll label muted" data-reveal="fade">
-            <span className="hero__scroll-line" aria-hidden="true" />
-            Scroll
-          </p>
-        </div>
+        </h1>
+        <p className="hero__tagline" data-hero-tagline>
+          {hero.tagline}
+        </p>
       </div>
 
-      <Marquee items={hero.ticker} className="hero__ticker" />
+      <div className="hero__stage hero__bottom">
+        <div className="hero__info" data-reveal="fade">
+          <p className="hero__categories label">{hero.categories.join(' / ')}</p>
+          <p className="hero__scroll label muted">
+            <span className="hero__scroll-line" aria-hidden="true" />
+            {hero.scrollLabel}
+          </p>
+        </div>
+
+        <div className="hero__ctas" data-reveal="fade">
+          <a
+            className="hero-cta hero-cta--solid arrow-host"
+            href={`#${hero.ctas.inquiry.targetId}`}
+            onClick={(e) => goTo(e, hero.ctas.inquiry.targetId)}
+          >
+            <span className="hero-cta__text">
+              <span className="hero-cta__label">{hero.ctas.inquiry.label}</span>
+              <span className="hero-cta__sub">{hero.ctas.inquiry.subLabel}</span>
+            </span>
+            <span className="hero-cta__icon" aria-hidden="true">
+              <Arrow className="hero-cta__arrow" />
+            </span>
+          </a>
+        </div>
+      </div>
     </section>
   )
 }

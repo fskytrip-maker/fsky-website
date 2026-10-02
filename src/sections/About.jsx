@@ -9,15 +9,27 @@ export default function About() {
       <div className="container">
         <SectionHead index={about.index} label={about.label} />
         <h2 id="about-title" className="sr-only">
-          About FSKY
+          FSKYについて
         </h2>
 
         <ScrubText className="about__statement display" text={about.statement} />
+        <p className="about__statement-en" lang="en" data-reveal="fade">
+          {about.statementEn}
+        </p>
 
         <div className="about__body">
-          {about.body.map((paragraph, i) => (
-            <p key={i} data-reveal="fade">
-              {paragraph}
+          {about.body.map((block, i) => (
+            <p
+              key={i}
+              className={block.big ? `about__line about__line--big is-${block.tone}` : 'about__line'}
+              data-reveal="fade"
+            >
+              {block.text.split('\n').map((line, j) => (
+                <span key={j}>
+                  {j > 0 && <br />}
+                  {line}
+                </span>
+              ))}
             </p>
           ))}
         </div>
