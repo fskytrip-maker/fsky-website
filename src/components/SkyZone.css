@@ -25,8 +25,7 @@
 /* With the transition, reach up over its last screen too, so the gradient
    can take over the whole screen while the transition is still pinned. */
 .js-motion .silk-wipe + .sky-zone > .sky-zone__bg {
-  top: -100vh;
-  top: -100svh;
+  top: calc(var(--wipe-overlap) * -1);
 }
 
 .sky-zone__view {

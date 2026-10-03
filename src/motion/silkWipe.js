@@ -18,6 +18,9 @@ const PAPER_FALLBACK = [244, 242, 238]
 // background fades in over the same range (as --wipe-in, 0 → 1), so it can
 // carry its own gradient / motion on from the flat colour.
 const FILL = [0.74, 0.86]
+const LIGHT_FG = [244, 242, 238] // type colour over the dark part of the transition
+const mix = (a, b, t, alpha = 1) =>
+  `rgb(${a.map((c, i) => Math.round(c + (b[i] - c) * t)).join(' ')} / ${alpha})`
 
 function parseColor(value) {
   const v = value.trim()
@@ -122,11 +125,13 @@ export function mountSilkWipe(wrapper) {
   const readProgress = () => {
     const r = wrapper.getBoundingClientRect()
     const vh = window.innerHeight
+    // The next section overlaps the wrapper's end by `overlap` (its margin).
     // Starts as soon as the wrapper (which overlaps the end of Services)
-    // enters from the bottom; ends (all white) as the next section — which overlaps the
-    // wrapper's last screen, with a see-through top — nears the top of the
-    // screen. So its heading rises over the white-out as it happens.
-    return Math.min(1, Math.max(0, (vh - r.top) / (r.height - vh * 0.1)))
+    // enters from the bottom; ends (all white) as the next section's top
+    // nears the top of the screen — it rises over the transition meanwhile.
+    const overlap = -parseFloat(getComputedStyle(wrapper).marginBottom) || vh
+    const span = r.height - overlap + vh * 0.9
+    return Math.min(1, Math.max(0, (vh - r.top) / span))
   }
 
   const draw = () => {
@@ -219,12 +224,30 @@ export function mountSilkWipe(wrapper) {
   // its background (--wipe-in) with the last of the fill. Only while the wipe
   // is actually shown (it's display:none under reduced motion).
   const content = next?.querySelector('.section > .container')
+  const inkFg = (next && parseColor(getComputedStyle(next).getPropertyValue('--fg'))) || [10, 10, 10]
+  const clearInk = () => {
+    next?.style.removeProperty('--fg')
+    next?.style.removeProperty('--muted')
+    next?.style.removeProperty('--line')
+  }
   const reveal = () => {
     const shown = wrapper.offsetHeight > 0
-    if (content) content.style.opacity = shown ? String(smooth(0.72, 0.86, progress)) : ''
+    // The content comes in while the lines are still crossing, in light type
+    // over the dark, turning to the section's own ink as the ground lightens.
+    if (content) content.style.opacity = shown ? String(smooth(0.36, 0.52, progress)) : ''
     if (next) {
-      if (shown) next.style.setProperty('--wipe-in', String(smooth(FILL[0], FILL[1], progress)))
-      else next.style.removeProperty('--wipe-in')
+      if (shown) {
+        next.style.setProperty('--wipe-in', String(smooth(FILL[0], FILL[1], progress)))
+        const ink = smooth(0.58, 0.78, progress)
+        if (ink < 1) {
+          next.style.setProperty('--fg', mix(LIGHT_FG, inkFg, ink))
+          next.style.setProperty('--muted', mix(LIGHT_FG, inkFg, ink, 0.62))
+          next.style.setProperty('--line', mix(LIGHT_FG, inkFg, ink, 0.22))
+        } else clearInk()
+      } else {
+        next.style.removeProperty('--wipe-in')
+        clearInk()
+      }
     }
   }
   const onScroll = () => {
@@ -259,6 +282,7 @@ export function mountSilkWipe(wrapper) {
   return () => {
     if (content) content.style.opacity = ''
     next?.style.removeProperty('--wipe-in')
+    clearInk()
     io.disconnect()
     ro.disconnect()
     cancelAnimationFrame(frame)
