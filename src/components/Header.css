@@ -34,7 +34,7 @@
 }
 
 /* Sized by the VISIBLE mark (the asset is already cropped tight to it — see
-   src/assets/fsky-mark.png), so these widths are the mark itself, not an
+   src/assets/fsky-mark.webp), so these widths are the mark itself, not an
    image canvas with invisible padding inside it. */
 .header__logo img {
   display: block;

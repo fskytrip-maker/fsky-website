@@ -1,4 +1,4 @@
-import fskyMark from '../assets/fsky-mark.png'
+import fskyMark from '../assets/fsky-mark.webp'
 import { privacy } from '../data/privacy'
 import { site } from '../data/site'
 import './PrivacyPage.css'
@@ -9,7 +9,7 @@ export default function PrivacyPage() {
     <div className="pp">
       <header className="pp__header">
         <a className="pp__logo" href="/" aria-label={`${site.name} トップページへ`}>
-          <img src={fskyMark} alt="" width={1206} height={642} />
+          <img src={fskyMark} alt="" width={360} height={192} />
         </a>
         <a className="pp__back" href="/">
           トップページへ戻る

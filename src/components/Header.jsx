@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import fskyMark from '../assets/fsky-mark.png'
+import fskyMark from '../assets/fsky-mark.webp'
 import Arrow from './Arrow'
 import { headerContact, headerNav, nav, site } from '../data/site'
 import { scrollToId, setScrollLocked } from '../motion/lenis'
@@ -89,7 +89,7 @@ export default function Header() {
       <div className="header__bar">
         {/* Left: official logo, top-left at all sizes */}
         <a className="header__logo" href="#top" onClick={goTop} aria-label={`${site.name} — top`}>
-          <img src={fskyMark} alt="" width={1206} height={642} loading="eager" decoding="async" />
+          <img src={fskyMark} alt="" width={360} height={192} loading="eager" decoding="async" />
         </a>
 
         {/* Desktop-only, right: curated nav + contact, grouped as one row
