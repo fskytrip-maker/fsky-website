@@ -72,6 +72,8 @@ export const contact = {
   label: 'Contact',
   title: "Let's\ntalk.",
   lead: 'ご相談・お見積りはこちらから。',
+  // Shown under the lead on the transition into this section (SkyWipe).
+  leadEn: 'For consultations and estimates, start here.',
   phone: {
     heading: 'CALL US',
     sub: 'お電話でのお問い合わせ',

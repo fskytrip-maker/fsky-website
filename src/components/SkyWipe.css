@@ -1,0 +1,87 @@
+/* How far Contact's zone overlaps the end of the transition: its ground
+   layer reaches up this far, so it can take over the whole screen while the
+   stage is still pinned. Read by SkyZone.css too. */
+.sky-wipe,
+.sky-wipe + .sky-zone {
+  --wipe-overlap: 80vh;
+  --wipe-overlap: 80svh;
+}
+
+/* Only exists while motion is on. */
+.sky-wipe {
+  display: none;
+}
+
+/* Pulled up over the last screen of Services: the stage pins there and is
+   transparent until the scene draws (clicks pass through to Services). The
+   scroll room after it holds the chapter card, then Contact rises in. */
+.js-motion .sky-wipe {
+  position: relative;
+  display: block;
+  height: 300vh;
+  height: 300svh;
+  margin-top: -100vh;
+  margin-top: -100svh;
+  margin-bottom: calc(var(--wipe-overlap) * -1);
+  pointer-events: none;
+}
+
+.sky-wipe__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh; /* no strip when the mobile URL bar hides */
+  overflow: hidden;
+}
+
+.sky-wipe__stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sky-wipe__chapter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 1.8vw, 28px);
+  padding-inline: var(--gap);
+  color: var(--c-ink);
+  text-align: center;
+  opacity: 0;
+}
+
+.sky-wipe__chapter-title {
+  font-size: clamp(1.625rem, 1rem + 2.6vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  line-break: strict;
+  word-break: auto-phrase;
+}
+
+/* Each character surfaces out of a soft glow as you scroll (--t: 0 → 1,
+   set by motion/skyWipe.js). Kept inline so the line still breaks at
+   phrase boundaries. */
+.sky-wipe__char {
+  --t: 0;
+  opacity: var(--t);
+  filter: blur(calc((1 - var(--t)) * 10px));
+  text-shadow: 0 0 calc((1 - var(--t)) * 28px) rgb(255 255 255 / 0.9);
+}
+
+.sky-wipe__chapter-en {
+  font-size: clamp(0.8125rem, 0.72rem + 0.35vw, 1.0625rem);
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  opacity: 0;
+}
+
+/* Contact arrives straight after the transition, so it needs far less top
+   space than the other sections. */
+.sky-wipe + .sky-zone > .section:first-of-type {
+  padding-top: clamp(48px, 6vw, 96px);
+}

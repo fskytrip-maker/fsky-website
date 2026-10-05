@@ -1,12 +1,11 @@
 /**
- * The sky-blue ground under everything after the silk transition (Contact
+ * The sky-blue ground under everything after the transition (Contact
  * and the footer): one gradient with slowly drifting light, held
  * fixed to the screen (sticky) while those sections scroll over it, so it
- * runs on unbroken from section to section. Large geometric line figures turn slowly over it. Styles in SkyZone.css; after
- * the transition it fades in as the white-out completes (--wipe-in, set by
- * motion/silkWipe.js).
+ * runs on unbroken from section to section. Styles in SkyZone.css; at the
+ * end of the transition it fades in over the transition's own sky (--wipe-in,
+ * set by motion/skyWipe.js).
  */
-import GeoPattern from './GeoPattern'
 import './SkyZone.css'
 
 export default function SkyZone({ children }) {
@@ -17,7 +16,6 @@ export default function SkyZone({ children }) {
           <span className="sky-zone__glow sky-zone__glow--a" />
           <span className="sky-zone__glow sky-zone__glow--b" />
           <span className="sky-zone__glow sky-zone__glow--c" />
-          <GeoPattern />
         </div>
       </div>
       {children}

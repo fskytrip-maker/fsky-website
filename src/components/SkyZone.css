@@ -1,13 +1,13 @@
-/* No background of its own: during the silk transition the zone overlaps
-   the transition's last screen, which must stay visible until the ground
-   (below) fades in. */
+/* No background of its own: during the transition (SkyWipe) the zone
+   overlaps the transition's last screen, which must stay visible until the
+   ground (below) fades in. */
 .sky-zone {
   position: relative;
   isolation: isolate;
 }
 
 /* Spans the whole zone; the sticky, screen-sized view inside keeps the
-   gradient fixed to the screen. --wipe-in: 1 unless the silk transition is
+   gradient fixed to the screen. --wipe-in: 1 unless the transition is
    fading it in. */
 .sky-zone__bg {
   position: absolute;
@@ -24,7 +24,7 @@
 
 /* With the transition, reach up over its last screen too, so the gradient
    can take over the whole screen while the transition is still pinned. */
-.js-motion .silk-wipe + .sky-zone > .sky-zone__bg {
+.js-motion .sky-wipe + .sky-zone > .sky-zone__bg {
   top: calc(var(--wipe-overlap) * -1);
 }
 

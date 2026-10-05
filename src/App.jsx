@@ -1,7 +1,7 @@
 import { useRef } from 'react'
-import SilkWipe from './components/SilkWipe'
 import Header from './components/Header'
 import SilkZone from './components/SilkZone'
+import SkyWipe from './components/SkyWipe'
 import SkyZone from './components/SkyZone'
 import { useMotion } from './motion/useMotion'
 import About from './sections/About'
@@ -28,7 +28,7 @@ export default function App() {
           <About />
           <Services />
         </SilkZone>
-        <SilkWipe />
+        <SkyWipe />
         {/* Contact + footer share one sky-blue ground. The footer sits inside
             it (and so inside <main>) so the ground can run on unbroken. */}
         <SkyZone>
