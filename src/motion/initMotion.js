@@ -29,11 +29,22 @@ export function initMotion(root) {
       q(root, '[data-hero-bg]').forEach((el) => {
         gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 1.6, ease: 'power2.out' })
       })
+      // Copy that starts below the first screen (some phone layouts) plays
+      // in when scrolled to, without the load-time delay.
+      const later = (el) => el.getBoundingClientRect().top > window.innerHeight
+      const onView = (el) => ({ trigger: el, start: 'top bottom', once: true })
       q(root, '[data-hero-step]').forEach((el) => {
         gsap.fromTo(
           el,
           { opacity: 0, y: 18 },
-          { opacity: 1, y: 0, duration: 1, delay: Number(el.dataset.heroStep), ease: 'power3.out' },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            delay: later(el) ? 0.1 : Number(el.dataset.heroStep),
+            ease: 'power3.out',
+            scrollTrigger: onView(el),
+          },
         )
       })
       q(root, '[data-hero-chars]').forEach((el) => {
@@ -46,23 +57,9 @@ export function initMotion(root) {
             filter: 'blur(0px)',
             duration: 0.9,
             stagger: 0.045,
-            delay: Number(el.dataset.delay || 0),
+            delay: later(el) ? 0.1 : Number(el.dataset.delay || 0),
             ease: 'power3.out',
-          },
-        )
-      })
-
-      // -- Silk behind About/Services: dims once the Hero has scrolled away ---
-      q(root, '[data-silk-sticky]').forEach((el) => {
-        const hero = root.querySelector('.hero')
-        if (!hero) return
-        gsap.fromTo(
-          el,
-          { opacity: 1 },
-          {
-            opacity: 0.55,
-            ease: 'none',
-            scrollTrigger: { trigger: hero, start: 'bottom bottom', end: 'bottom top', scrub: true },
+            scrollTrigger: onView(el),
           },
         )
       })

@@ -1,4 +1,8 @@
 .hero {
+  /* Phones / tablets: the floor stage along the bottom of the Hero (square,
+     capped) and the mark standing on it. */
+  --stage-h: min(100vw, 680px);
+  --mark-w: min(86vw, 560px);
   position: relative;
   z-index: 0;
   display: flex;
@@ -12,29 +16,45 @@
   min-height: 100svh;
   padding-top: var(--header-h);
   overflow: clip;
-  /* Transparent: the near-black ground and the silk folds behind the Hero
-     belong to SilkZone, which runs on behind About and Services. */
+  /* Transparent: the near-black ground behind the Hero belongs to
+     DarkZone, which runs on behind About and Services. */
 }
 
 /* ---- Background: dark stage with a lit, reflective floor ---------------- */
 
-/* Covers the Hero (cropped from the middle, the floor kept at the bottom).
-   Two fades, intersected: it grows gradually more transparent toward the
-   left (behind the copy), and fades out at its foot into the dark of the
-   sections below. */
+/* Phones / tablets: the floor stage along the bottom (the copy sits above
+   it). The image's sharp strip runs 74–83% of its height; after the 1.2×
+   scale that lands at 83.6% down this box, where the mark stands (see
+   .hero__visual). It fades in from the dark at the top and out at the foot. */
 .hero__bg {
   position: absolute;
-  inset: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: -1;
+  height: var(--stage-h);
   pointer-events: none;
-  -webkit-mask-image:
-    linear-gradient(to right, rgb(0 0 0 / 0.08) 0%, #000 62%),
-    linear-gradient(to bottom, #000 78%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to right, rgb(0 0 0 / 0.08) 0%, #000 62%),
-    linear-gradient(to bottom, #000 78%, transparent 100%);
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 89%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 89%, transparent 100%);
+}
+
+/* Wide screens: covers the Hero (the floor kept at the bottom). Two fades,
+   intersected: it grows gradually more transparent toward the left (behind
+   the copy), and fades out at its foot into the dark of the sections
+   below. */
+@media (min-width: 1024px) {
+  .hero__bg {
+    top: 0;
+    height: auto;
+    -webkit-mask-image:
+      linear-gradient(to right, rgb(0 0 0 / 0.08) 0%, #000 62%),
+      linear-gradient(to bottom, #000 78%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, rgb(0 0 0 / 0.08) 0%, #000 62%),
+      linear-gradient(to bottom, #000 78%, transparent 100%);
+    mask-composite: intersect;
+  }
 }
 
 .hero__bg img {
@@ -58,16 +78,20 @@
 
 /* The supplied render has real alpha, so it sits straight on the page;
    width-only sizing keeps its aspect ratio. A soft blue glow lifts it off
-   the near-black. */
+   the near-black. Phones / tablets: centred, its foot (the art ends 2.25%
+   of its width above the box's bottom) on the floor stage's sharp strip,
+   16.4% of the stage up from the bottom. */
 .hero__visual {
   position: absolute;
   z-index: 0;
-  top: calc(var(--header-h) + 6vh);
-  right: 7vw;
-  width: 86vw; /* the whole mark stays on screen */
+  right: calc((100% - var(--mark-w)) / 2);
+  bottom: calc(var(--stage-h) * 0.164 - var(--mark-w) * 0.0225);
+  width: var(--mark-w);
   pointer-events: none;
-  /* Tilted 5° to the left (rotation only — the artwork itself is untouched). */
+  /* Tilted 5° to the left about its foot (rotation only — the artwork
+     itself is untouched). */
   transform: rotate(-5deg);
+  transform-origin: 50% 100%;
 }
 
 .hero__visual picture {
@@ -90,8 +114,11 @@
   flex-direction: column;
   align-items: flex-start;
   width: min(88vw, 1760px);
-  margin: auto auto 0;
-  padding-bottom: max(clamp(28px, 5vh, 56px), env(safe-area-inset-bottom));
+  /* Phones / tablets: at the top, clear of the mark standing below (the
+     padding reserves its height above the stage's foot). */
+  margin: 0 auto auto;
+  padding-top: clamp(28px, 5vh, 56px);
+  padding-bottom: calc(var(--stage-h) * 0.164 + var(--mark-w) * 0.48 + 28px);
   /* Lifts the type off the brightest parts of the glass behind it. */
   text-shadow: 0 2px 24px rgb(0 0 0 / 0.55);
 }
@@ -220,11 +247,155 @@
   .hero__copy {
     width: auto;
     margin: auto auto auto clamp(48px, 4.6vw, 88px);
-    padding-bottom: 0;
+    padding-block: 0;
   }
 
   /* The scroll cue rides the bottom of the screen, like the reference. */
   .hero__scroll {
     margin-top: clamp(40px, 8vh, 96px);
+  }
+}
+
+/* ---- Phone layouts being compared (?hero=a|b|c, see Hero.jsx) -----------
+   In all three the floor runs from the top down to just past the mark's
+   foot (--foot, from the top of the Hero), the mark standing on its sharp
+   strip (83.6% down the box, see .hero__bg). */
+@media (max-width: 1023px) {
+  .hero[data-m] .hero__bg {
+    top: 0;
+    bottom: auto;
+    height: calc(var(--foot) / 0.836);
+    -webkit-mask-image: linear-gradient(to bottom, #000 89%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 89%, transparent 100%);
+  }
+
+  /* The art ends 95.5% down the mark's box (half as tall as wide). */
+  .hero[data-m] .hero__visual {
+    top: calc(var(--foot) - var(--mark-w) * 0.4775);
+    bottom: auto;
+  }
+
+  /* A — poster: the title big across the top, the mark large in the
+     middle, the rest gathered in the dark at the bottom. */
+  .hero[data-m='a'] {
+    --mark-w: min(94vw, 600px);
+    --foot: calc(100svh - 272px);
+  }
+
+  .hero[data-m='a'] .hero__copy,
+  .hero[data-m='c'] .hero__copy {
+    position: absolute;
+    inset: var(--header-h) 0 0;
+    width: auto;
+    margin: 0;
+    padding: clamp(16px, 3vh, 32px) 6vw max(28px, env(safe-area-inset-bottom));
+  }
+
+  .hero[data-m='a'] .hero__title {
+    margin-bottom: auto;
+    font-size: clamp(3.5rem, 15vw, 6.5rem);
+  }
+
+  .hero[data-m='a'] .hero__lead {
+    margin-top: 0;
+  }
+
+  /* Darkens the floor's blurred foreground behind the bottom copy. */
+  .hero[data-m='a']::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 230px;
+    background: linear-gradient(to bottom, transparent, var(--c-void) 55%);
+    content: '';
+    pointer-events: none;
+  }
+
+  /* B — the mark first: the first screen is the mark on the floor and the
+     scroll cue; the copy follows below it. */
+  .hero[data-m='b'] {
+    --mark-w: min(92vw, 600px);
+    --foot: calc(100svh * 0.64);
+  }
+
+  .hero[data-m='b'] .hero__copy {
+    padding-top: calc(100svh - var(--header-h) + 24px);
+    padding-bottom: clamp(48px, 8vh, 80px);
+  }
+
+  .hero[data-m='b'] .hero__scroll {
+    position: absolute;
+    top: calc(100svh - var(--header-h) - 96px);
+    left: 0;
+    margin: 0;
+  }
+
+  /* C — vertical Japanese: the lead set top-to-bottom in the upper right,
+     the mark in the middle, the title and the rest at the bottom left. */
+  .hero[data-m='c'] {
+    --mark-w: min(72vw, 480px);
+    --foot: calc(100svh - 396px);
+  }
+
+  /* Below the floor's sharp strip, the lit foreground sinks into the dark,
+     so the white type at the bottom reads cleanly. */
+  .hero[data-m='c']::after {
+    position: absolute;
+    top: calc(var(--foot) + 18px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+      to bottom,
+      rgb(6 9 15 / 0) 0,
+      rgb(6 9 15 / 0.9) 30px,
+      var(--c-void) 96px
+    );
+    content: '';
+    pointer-events: none;
+  }
+
+  /* Leans left, clear of the vertical lines on the right. */
+  .hero[data-m='c'] .hero__visual {
+    right: auto;
+    left: 4vw;
+  }
+
+  .hero[data-m='c'] .hero__index {
+    margin-top: auto;
+  }
+
+  .hero[data-m='c'] .hero__lead {
+    position: absolute;
+    top: clamp(16px, 3vh, 32px);
+    right: 6vw;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(1.125rem, 0.9rem + 1.2vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-shadow:
+      0 0 10px rgb(0 0 0 / 0.9),
+      0 2px 24px rgb(0 0 0 / 0.7);
+    writing-mode: vertical-rl;
+  }
+
+  /* A soft shadow pooled behind the vertical lines, so the light streak in
+     the background never runs through them. */
+  .hero[data-m='c']::before {
+    position: absolute;
+    top: var(--header-h);
+    right: 0;
+    width: 46vw;
+    height: min(62svh, 480px);
+    background: radial-gradient(
+      ellipse 70% 60% at 72% 42%,
+      rgb(6 9 15 / 0.85) 0%,
+      rgb(6 9 15 / 0.6) 45%,
+      rgb(6 9 15 / 0) 100%
+    );
+    content: '';
+    pointer-events: none;
   }
 }

@@ -1,0 +1,16 @@
+.dark-zone {
+  position: relative;
+  /* Near-black under the Hero, settling into the page's pure black by the
+     end of the first screen. */
+  background: linear-gradient(
+    to bottom,
+    var(--c-void) 0,
+    var(--c-void) 70vh,
+    var(--c-black) 100vh
+  );
+}
+
+/* Sections inside the zone let the ground show through. */
+.dark-zone .section__bg {
+  background: transparent;
+}

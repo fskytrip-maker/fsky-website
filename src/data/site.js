@@ -45,7 +45,7 @@ export const about = {
   // English rendering, shown small under the statement.
   statementEn: 'Staying close to your vision, we create designs that shine like nothing else.',
   // Body, as blocks: `big` lines are the large coloured highlights
-  // (tone 'sky' = brand cyan, 'blue' = the silk's blue-violet). "\n" = line
+  // (tone 'sky' = brand cyan, 'blue' = blue-violet). "\n" = line
   // break on wide screens.
   body: [
     { text: 'FSKYは、ウェブデザイン、ロゴ・ブランドデザイン、\nグラフィック・名刺デザインを手がけるデザインスタジオです。' },

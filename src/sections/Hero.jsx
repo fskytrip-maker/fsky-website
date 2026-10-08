@@ -5,18 +5,20 @@ import RevealText from '../components/RevealText'
 import { hero } from '../data/site'
 import './Hero.css'
 
+// Phone layouts being compared: ?hero=a (poster) | b (mark first) |
+// c (vertical Japanese). Without it, the current phone layout.
+const PHONE_LAYOUT = ['a', 'b', 'c'].find((v) => v === new URLSearchParams(window.location.search).get('hero'))
+
 // A dark stage with a lit, reflective floor (supplied image) fills the
 // background. Both images come from the supplied PNGs: the background as
 // lossless WebP (lossy formats turn its fine grain into blocky bands in the
 // dark), the mark as full-colour AVIF with a lossless WebP fallback. Copy on the left; the glass FSKY mark (a supplied render, used as-is —
 // src/assets/hero-glass.webp) fills the right and sits behind the copy on
 // small screens; the copy always stays in front of it. On load the copy plays
-// in step by step (data-hero-step = delay in seconds, see initMotion). The
-// silk folds behind come from SilkZone (see App.jsx), which carries them on
-// behind About and Services too.
+// in step by step (data-hero-step = delay in seconds, see initMotion).
 export default function Hero() {
   return (
-    <section id="top" className="hero" aria-label="FSKY — Design Studio">
+    <section id="top" className="hero" data-m={PHONE_LAYOUT} aria-label="FSKY — Design Studio">
       <div className="hero__bg" aria-hidden="true">
         <img data-hero-bg src={heroBg} alt="" width={1672} height={941} loading="eager" decoding="async" />
       </div>

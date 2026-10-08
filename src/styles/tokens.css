@@ -24,17 +24,9 @@
   /* Accent: locked to the brand's single sky-blue (no gradients/metallic). */
   --accent: #72d3f9;
   --accent-rgb: 114 211 249;
-  /* Secondary highlight for large coloured copy only (ABOUT): the blue-violet
-     of the silk folds, a step deeper than --accent. */
+  /* Secondary highlight for large coloured copy only (ABOUT): a blue-violet,
+     a step deeper than --accent. */
   --accent-2: #8a9bff;
-
-  /* Hero background only — deep navy/blue tones for the silk-like ambient
-     layer (see HeroSilk). Kept clearly darker than --accent so the mark
-     always reads as the brightest thing on screen. */
-  --silk-1-rgb: 8 28 51; /* deepest, near --c-void */
-  --silk-2-rgb: 15 44 78;
-  --silk-3-rgb: 28 69 112;
-  --silk-4-rgb: 42 111 168; /* brightest fold highlight, still << accent */
 
   /* ---- Typography --------------------------------------------------------- */
   /* No web font is loaded yet (keeps the first version light). To adopt one,
@@ -104,7 +96,7 @@
   --surface: #e6e3dd;
 }
 
-/* Sky theme (the SkyZone the silk transition turns into: Contact + footer):
+/* Sky theme (the SkyZone the transition turns into: Contact + footer):
    ink type on the brand sky blue. The gradient + light motion is in
    components/SkyZone.css. */
 [data-theme='sky'] {

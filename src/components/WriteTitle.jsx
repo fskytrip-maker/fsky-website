@@ -4,7 +4,7 @@ import './WriteTitle.css'
 
 /**
  * Heading that writes itself in: each time it comes on screen (and has
- * faded in, when it sits behind the silk transition), each letter's outline
+ * faded in, when it sits behind the transition), each letter's outline
  * is drawn one after another, then filled in. `text` may contain '\n'.
  *
  * Each letter gets its own small SVG copy (outline-drawn via stroke dashes)
@@ -24,7 +24,7 @@ export default function WriteTitle({ text }) {
     const el = ref.current
     if (!el || window.matchMedia(REDUCED).matches) return undefined
     const chars = [...el.querySelectorAll('.wt-char')].filter((c) => c.textContent.trim())
-    // Behind the silk transition the section's content fades in; wait for it.
+    // Behind the transition the section's content fades in; wait for it.
     const fader = el.closest('.container')
     let raf = 0
     let tl = null
@@ -73,7 +73,7 @@ export default function WriteTitle({ text }) {
       })
     }
 
-    // Behind the silk transition the content fades in; wait until it shows.
+    // Behind the transition the content fades in; wait until it shows.
     const waitVisible = () => {
       const visible = !fader || Number(getComputedStyle(fader).opacity) > 0.95
       if (visible) run()
