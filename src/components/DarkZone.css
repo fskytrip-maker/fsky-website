@@ -14,3 +14,26 @@
 .dark-zone .section__bg {
   background: transparent;
 }
+
+/* Spans the whole zone; the sticky child keeps one screen of particles in
+   view while the content scrolls over it. */
+.dark-zone__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.dark-zone__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100lvh;
+  overflow: hidden;
+}
+
+.dark-zone__particles {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

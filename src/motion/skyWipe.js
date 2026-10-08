@@ -24,6 +24,9 @@ const OUT = [0.635, 0.725]
 // content.
 const FILL = [0.7, 0.8]
 const CONTENT = [0.75, 0.925]
+// How steeply the particle streams climb, as height per unit of width: the
+// angle they have on a 16:10-ish screen, kept on narrower ones.
+const RISE = 0.6
 
 const clamp = (x) => Math.min(1, Math.max(0, x))
 const smooth = (a, b, x) => {
@@ -72,14 +75,20 @@ function softDot(ctx, x, y, r, alpha) {
   ctx.fill()
 }
 
-/** Streams, each a wavy band of dots with a few large soft orbs riding along. */
+/**
+ * Streams, each a wavy band of dots with a few large soft orbs riding along.
+ * `mid` is the stream's height across the middle of the screen and `drop`
+ * how far it climbs from left to right (fractions of the height on a wide
+ * screen; see RISE).
+ */
 function makeStreams() {
   const r = rng(23)
   return Array.from({ length: 3 }, (_, i) => {
     const y0 = 0.62 + i * 0.26 + r() * 0.06
+    const y1 = y0 - 0.75 - r() * 0.25
     return {
-      y0,
-      y1: y0 - 0.75 - r() * 0.25,
+      mid: (y0 + y1) / 2,
+      drop: y0 - y1,
       amp: 0.05 + r() * 0.04,
       freq: 1.5 + r() * 1.5,
       phase: r() * TAU,
@@ -142,10 +151,15 @@ function drawScene(ctx, p, w, h, streams) {
   for (const s of streams) {
     const shown = smooth(s.start, s.start + 0.16, p) * out
     if (shown <= 0) continue
+    // The climb and the waves are measured against the width (at most the
+    // height), so the streams keep the same gentle shape on a tall phone as
+    // on a wide screen.
+    const rise = Math.min(h, w * RISE)
     const at = (u, off) => {
       const x = lerp(-0.15, 1.15, u)
-      const y = lerp(s.y0, s.y1, u) + Math.sin(u * s.freq * TAU + s.phase + p * 3) * s.amp + off
-      return [x * w, y * h]
+      const wave = Math.sin(u * s.freq * TAU + s.phase + p * 3) * s.amp * rise
+      const y = s.mid * h + (0.5 - u) * s.drop * rise + wave + off * h
+      return [x * w, y]
     }
     const flow = p * s.speed
     ctx.fillStyle = '#fff'

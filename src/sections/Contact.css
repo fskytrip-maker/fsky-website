@@ -88,35 +88,23 @@
   }
 }
 
-.contact__details {
+/* SNS: one button per account, in equal columns (two to a row on the
+   narrowest phones). */
+.contact-sns {
   display: grid;
-  border-bottom: var(--border);
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 10px;
+  width: min(100%, 420px);
+  margin-top: 22px;
 }
 
-.contact__details > div {
-  display: grid;
-  gap: 6px;
-  padding-block: 18px;
-  border-top: var(--border);
-}
-
-.contact__details dd {
-  margin: 0;
-}
-
-.contact__details .is-placeholder {
-  color: var(--muted);
-}
-
-.contact__details a {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.contact__socials {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 24px;
+.contact-btn--sns {
+  gap: 8px;
+  width: 100%;
+  min-height: 60px;
+  margin-top: 0;
+  padding-inline: 12px;
+  font-size: clamp(1rem, 0.94rem + 0.3vw, 1.125rem);
 }
 
 @media (min-width: 1024px) {
@@ -126,7 +114,7 @@
     align-items: start;
   }
 
-  /* Left: title, lead, phone / LINE. Right: the form, its top level with
+  /* Left: title, lead, SNS / LINE. Right: the form, its top level with
      the title's. */
   .contact__title,
   .contact__lead,
@@ -137,10 +125,5 @@
   .contact__form {
     grid-column: 7 / span 6;
     grid-row: 1 / span 3;
-  }
-
-  .contact__details > div {
-    grid-template-columns: 8rem 1fr;
-    align-items: baseline;
   }
 }

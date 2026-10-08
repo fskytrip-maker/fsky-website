@@ -6,11 +6,10 @@ import WriteTitle from '../components/WriteTitle'
 import { contact } from '../data/site'
 import './Contact.css'
 
-// Phone and LINE, each as a heading block with one big button, plus the
-// inquiry form. Social links stay a visible placeholder until real accounts
-// are set in src/data/site.js.
+// LINE and SNS, each as a heading block with its buttons, plus the inquiry
+// form. Accounts and links live in src/data/site.js.
 export default function Contact() {
-  const { phone, line, socials, socialPlaceholders } = contact
+  const { social, line, socials } = contact
 
   return (
     <Section id="contact" className="contact" aria-labelledby="contact-title">
@@ -27,20 +26,6 @@ export default function Contact() {
           </p>
 
           <div className="contact__channels">
-            <div className="contact__channel" data-reveal="fade">
-              <h3 className="contact__channel-title display">{phone.heading}</h3>
-              <p className="contact__channel-sub">{phone.sub}</p>
-              <a className="contact-btn" href={phone.href}>
-                <svg className="contact-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"
-                  />
-                </svg>
-                <span className="contact-btn__label">{phone.label}</span>
-              </a>
-            </div>
-
             <div className="contact__channel" data-reveal="fade">
               <h3 className="contact__channel-title display">{line.heading}</h3>
               <p className="contact__channel-sub">{line.sub}</p>
@@ -65,26 +50,25 @@ export default function Contact() {
               </a>
             </div>
 
-            <dl className="contact__details" data-reveal="fade">
-              <div>
-                <dt className="label muted">Social</dt>
-                <dd className={socials.length ? undefined : 'is-placeholder'}>
-                  {socials.length ? (
-                    <ul className="contact__socials">
-                      {socials.map((s) => (
-                        <li key={s.label}>
-                          <a href={s.href} target="_blank" rel="noreferrer noopener">
-                            {s.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    `${socialPlaceholders.join(' / ')} — to be added`
-                  )}
-                </dd>
-              </div>
-            </dl>
+            <div className="contact__channel" data-reveal="fade">
+              <h3 className="contact__channel-title display">{social.heading}</h3>
+              <p className="contact__channel-sub">{social.sub}</p>
+              <ul className="contact-sns">
+                {socials.map((s) => (
+                  <li key={s.label}>
+                    <a
+                      className="contact-btn contact-btn--sns arrow-host"
+                      href={s.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      <span className="contact-btn__label">{s.label}</span>
+                      <Arrow className="contact-btn__arrow" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="contact__form" data-reveal="fade">

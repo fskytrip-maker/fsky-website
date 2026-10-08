@@ -73,11 +73,10 @@ export const contact = {
   lead: 'ご相談・お見積りはこちらから。',
   // Shown under the lead on the transition into this section (SkyWipe).
   leadEn: 'For consultations and estimates, start here.',
-  phone: {
-    heading: 'CALL US',
-    sub: 'お電話でのお問い合わせ',
-    label: '080-9610-8093',
-    href: 'tel:+818096108093',
+  // SNS buttons, from `socials` below.
+  social: {
+    heading: 'SOCIAL',
+    sub: 'SNSでのお問い合わせ',
   },
   line: {
     heading: 'OFFICIAL LINE',
@@ -99,17 +98,15 @@ export const contact = {
     sending: '送信中…',
     messages: {
       done: 'お問い合わせありがとうございます。内容を確認のうえ、ご連絡いたします。',
-      error: '送信できませんでした。時間をおいて再度お試しいただくか、お電話・LINEでご連絡ください。',
-      unavailable: 'フォームは現在準備中です。お手数ですが、お電話またはLINEでご連絡ください。',
+      error: '送信できませんでした。時間をおいて再度お試しいただくか、LINE・SNSでご連絡ください。',
+      unavailable: 'フォームは現在準備中です。お手数ですが、LINEまたはSNSでご連絡ください。',
     },
   },
-  // e.g. [{ label: 'X', href: 'https://…' }]
   socials: [
     { label: 'Instagram', href: 'https://www.instagram.com/fsky_creative/' },
     { label: 'X', href: 'https://x.com/FSKY_Creative' },
     { label: 'TikTok', href: 'https://www.tiktok.com/@fsky892' },
   ],
-  socialPlaceholders: [],
 }
 
 export const footer = {

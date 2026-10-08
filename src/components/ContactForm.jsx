@@ -124,18 +124,6 @@ export default function ContactForm() {
           </div>
 
           <div className="cform__field">
-            <label htmlFor={id('tel')}>電話番号</label>
-            <input
-              id={id('tel')}
-              name="tel"
-              type="tel"
-              autoComplete="tel"
-              inputMode="tel"
-              placeholder="090-1234-5678"
-            />
-          </div>
-
-          <div className="cform__field">
             <label htmlFor={id('message')}>お問い合わせ内容{required}</label>
             <textarea
               id={id('message')}
