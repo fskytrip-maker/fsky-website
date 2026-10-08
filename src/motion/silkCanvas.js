@@ -11,6 +11,16 @@
 // only a screen-sized window onto it. Every anchor point drifts on its own
 // blend of slow sine waves, so the ribbons gently bend and sway.
 //
+// The softening blur and both fades (dimmed behind the middle of the screen,
+// gone by the end of the zone) are applied inside the canvases, on the small
+// glow buffer, rather than as CSS filter / mask-image over full-screen layers:
+// those are re-run by the compositor on every frame and get very heavy on
+// large screens or without GPU compositing.
+//
+// If the page itself is struggling (frames arriving far apart), the silk
+// steps down once to 15fps at plain resolution, so it never drags the
+// scrolling down with it.
+//
 // Runs on gsap.ticker (capped at 30fps), and only while the silk is on
 // screen, the tab is visible and reduced motion is off. Otherwise a single
 // static frame is drawn, so the background never goes blank. The animation
@@ -19,9 +29,24 @@ import { gsap } from './gsap'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const FPS = 30
+const LOW_FPS = 15
+// Step down when the page's frames average slower than this (ms) over
+// SAMPLE frames of running.
+const SLOW_FRAME = 28
+const SAMPLE = 90
+const WARMUP = 30 // frames skipped first (page load is always a little janky)
 const START_TIME = 8 // seconds into the motion, so the first frame isn't a "rest" pose
 const GLOW_SCALE = 0.35 // glow canvas resolution; the upscale itself softens it
+const GLOW_BLUR = 10 // softening of the glow, CSS px
 const MAX_DPR = 1.5
+// Dimmed band behind the middle of the screen (an ellipse: centre and radii
+// as fractions of the width / height), kept at DIM_LEVEL of full strength
+// out to DIM_CORE of its radius, back to full at its edge.
+const DIM = { x: 0.5, y: 0.42, rx: 0.52, ry: 0.34 }
+const DIM_LEVEL = 0.35
+const DIM_CORE = 0.45
+// The silk fades out over the zone's last this-many screen heights.
+const END_FADE = 0.6
 
 // Motion feel: how fast the ribbons sway, and how far (fraction of the
 // screen width / height).
@@ -168,6 +193,13 @@ export function mountHeroSilk(container) {
   const glow = glowCanvas.getContext('2d')
   const rim = rimCanvas.getContext('2d')
   if (!glow || !rim) return () => {}
+  // The glow is drawn into a scratch buffer, then copied onto the glow
+  // canvas once through a blur. Without canvas filters (older Safari) the
+  // CSS blur on the layer is kept instead (.no-canvas-filter).
+  const buffer = document.createElement('canvas')
+  const buf = buffer.getContext('2d')
+  const canvasBlur = typeof glow.filter === 'string'
+  if (!canvasBlur) container.classList.add('no-canvas-filter')
 
   const reduced = window.matchMedia(REDUCED)
   // The tall element the ribbons run through (falls back to just this box).
@@ -176,6 +208,7 @@ export function mountHeroSilk(container) {
   let h = 0
   let dpr = 1
   let ribbons = RIBBONS.wide
+  let zoneH = 0
   let count = 0 // anchors per ribbon (enough to span the zone)
   let offset = 0 // px of the zone scrolled above the canvas's top edge
   let frame = 0
@@ -184,21 +217,25 @@ export function mountHeroSilk(container) {
   let inView = true
   let running = false
   let particles = []
+  let fps = FPS
+  let lowPower = false
+  let sampled = 0
+  let sampleTime = 0
   const sprite = makeSprite()
 
   function resize() {
     const r = container.getBoundingClientRect()
     w = Math.max(1, Math.round(r.width))
     h = Math.max(1, Math.round(r.height))
-    dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
+    dpr = lowPower ? 1 : Math.min(window.devicePixelRatio || 1, MAX_DPR)
     ribbons = w >= h ? RIBBONS.wide : RIBBONS.tall
-    const zoneH = zone ? zone.offsetHeight : h
+    zoneH = zone ? zone.offsetHeight : h
     count = Math.ceil((zoneH / h - START) / STEP) + 3
     offset = readOffset()
     const dots = w >= h ? PARTICLES.wide : PARTICLES.tall
     if (particles.length !== dots) particles = makeParticles(dots)
-    glowCanvas.width = Math.max(1, Math.round(w * GLOW_SCALE))
-    glowCanvas.height = Math.max(1, Math.round(h * GLOW_SCALE))
+    glowCanvas.width = buffer.width = Math.max(1, Math.round(w * GLOW_SCALE))
+    glowCanvas.height = buffer.height = Math.max(1, Math.round(h * GLOW_SCALE))
     rimCanvas.width = Math.round(w * dpr)
     rimCanvas.height = Math.round(h * dpr)
     draw(clock)
@@ -209,14 +246,46 @@ export function mountHeroSilk(container) {
     return container.getBoundingClientRect().top - zone.getBoundingClientRect().top
   }
 
+  // Knocks the fades out of a canvas (in CSS px, under its current
+  // transform): the dimmed middle and, near the zone's end, everything below
+  // the fade line.
+  function fades(ctx) {
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.globalAlpha = 1
+    ctx.save()
+    ctx.translate(DIM.x * w, DIM.y * h)
+    ctx.scale(1, (DIM.ry * h) / (DIM.rx * w))
+    const r = DIM.rx * w
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r)
+    g.addColorStop(0, `rgba(0, 0, 0, ${1 - DIM_LEVEL})`)
+    g.addColorStop(DIM_CORE, `rgba(0, 0, 0, ${1 - DIM_LEVEL})`)
+    g.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    ctx.fillStyle = g
+    ctx.fillRect(-r, -r, r * 2, r * 2)
+    ctx.restore()
+
+    const end = zoneH - offset // the zone's end, in canvas px
+    const start = end - END_FADE * window.innerHeight
+    if (start < h) {
+      const e = ctx.createLinearGradient(0, start, 0, end)
+      e.addColorStop(0, 'rgba(0, 0, 0, 0)')
+      e.addColorStop(1, 'rgba(0, 0, 0, 1)')
+      ctx.fillStyle = e
+      ctx.fillRect(0, Math.max(0, start), w, h - Math.max(0, start))
+    }
+  }
+
   function draw(t) {
     const short = Math.min(w, h)
 
-    glow.setTransform(1, 0, 0, 1, 0, 0)
-    glow.clearRect(0, 0, glowCanvas.width, glowCanvas.height)
-    glow.setTransform(GLOW_SCALE, 0, 0, GLOW_SCALE, 0, 0)
-    glow.globalCompositeOperation = 'lighter'
-    glow.lineCap = 'round'
+    // The glow strokes go into the scratch buffer (`glowCtx`), which is then
+    // blurred onto the glow canvas.
+    const glowCtx = canvasBlur ? buf : glow
+    glowCtx.setTransform(1, 0, 0, 1, 0, 0)
+    glowCtx.clearRect(0, 0, buffer.width, buffer.height)
+    glowCtx.setTransform(GLOW_SCALE, 0, 0, GLOW_SCALE, 0, 0)
+    glowCtx.globalCompositeOperation = 'lighter'
+    glowCtx.lineCap = 'round'
 
     // Faint navy ambience from the lower-left and upper-right corners.
     ;[
@@ -226,11 +295,11 @@ export function mountHeroSilk(container) {
       const cx = (x + 0.03 * Math.sin(t * 0.12 + i * 2)) * w
       const cy = (y + 0.03 * Math.cos(t * 0.1 + i)) * h
       const r = Math.max(w, h) * 0.6
-      const g = glow.createRadialGradient(cx, cy, 0, cx, cy, r)
+      const g = glowCtx.createRadialGradient(cx, cy, 0, cx, cy, r)
       g.addColorStop(0, `rgba(${AMBIENT}, ${a})`)
       g.addColorStop(1, `rgba(${AMBIENT}, 0)`)
-      glow.fillStyle = g
-      glow.fillRect(0, 0, w, h)
+      glowCtx.fillStyle = g
+      glowCtx.fillRect(0, 0, w, h)
     })
 
     rim.setTransform(1, 0, 0, 1, 0, 0)
@@ -257,14 +326,14 @@ export function mountHeroSilk(container) {
       // any blur filter.
       for (let k = 0; k < 6; k += 1) {
         const f = 1 - k / 6
-        glow.save()
-        glow.translate(ox * f, 0)
-        glow.strokeStyle = `rgb(${k < 3 ? GLOW_OUTER : GLOW_INNER})`
-        glow.lineWidth = width * (0.2 + 0.8 * f)
-        glow.globalAlpha = (k < 3 ? 0.09 : 0.13) * ribbon.alpha
-        curve(glow, pts)
-        glow.stroke()
-        glow.restore()
+        glowCtx.save()
+        glowCtx.translate(ox * f, 0)
+        glowCtx.strokeStyle = `rgb(${k < 3 ? GLOW_OUTER : GLOW_INNER})`
+        glowCtx.lineWidth = width * (0.2 + 0.8 * f)
+        glowCtx.globalAlpha = (k < 3 ? 0.09 : 0.13) * ribbon.alpha
+        curve(glowCtx, pts)
+        glowCtx.stroke()
+        glowCtx.restore()
       }
 
       // Rim: a faint halo, then the thin bright edge.
@@ -298,15 +367,38 @@ export function mountHeroSilk(container) {
       rim.drawImage(sprite, x * w - d / 2, y * h - d / 2, d, d)
     })
 
-    glow.globalAlpha = 1
+    // Blur the glow onto its canvas in one pass, then cut the fades out of
+    // both layers.
+    glowCtx.globalAlpha = 1
+    if (canvasBlur) {
+      glow.setTransform(1, 0, 0, 1, 0, 0)
+      glow.globalCompositeOperation = 'copy'
+      glow.filter = `blur(${GLOW_BLUR * GLOW_SCALE}px)`
+      glow.drawImage(buffer, 0, 0)
+      glow.filter = 'none'
+    }
+    glow.setTransform(GLOW_SCALE, 0, 0, GLOW_SCALE, 0, 0)
+    fades(glow)
+    fades(rim)
+    glow.globalCompositeOperation = 'source-over'
+    rim.globalCompositeOperation = 'source-over'
     rim.globalAlpha = 1
   }
 
   // gsap.ticker hands deltaTime in ms. Only the time spent running is added
   // to the clock, so a pause (off-screen / hidden tab) resumes seamlessly.
   function tick(_time, deltaTime) {
+    if (!lowPower && sampled < WARMUP + SAMPLE) {
+      sampled += 1
+      if (sampled > WARMUP) sampleTime += deltaTime
+      if (sampled === WARMUP + SAMPLE && sampleTime / SAMPLE > SLOW_FRAME) {
+        lowPower = true
+        fps = LOW_FPS
+        resize()
+      }
+    }
     acc += Math.min(deltaTime / 1000, 0.1)
-    if (acc < 1 / FPS) return
+    if (acc < 1 / fps) return
     clock += acc
     acc = 0
     offset = readOffset()

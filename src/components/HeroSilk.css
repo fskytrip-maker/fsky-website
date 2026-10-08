@@ -4,20 +4,9 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* Dim (not erase) the band behind the FSKY mark and tagline so the mark
-     stays the brightest element; the folds read fully at the edges. */
-  -webkit-mask-image: radial-gradient(
-    ellipse 52% 34% at 50% 42%,
-    rgb(0 0 0 / 0.35) 0%,
-    rgb(0 0 0 / 0.35) 45%,
-    #000 100%
-  );
-  mask-image: radial-gradient(
-    ellipse 52% 34% at 50% 42%,
-    rgb(0 0 0 / 0.35) 0%,
-    rgb(0 0 0 / 0.35) 45%,
-    #000 100%
-  );
+  /* The dimmed middle and the fade at the zone's end are cut out inside the
+     canvases (motion/silkCanvas.js), not masked here: a mask over a
+     full-screen, constantly redrawn layer is costly on every frame. */
 }
 
 .hero-silk__layer {
@@ -28,10 +17,10 @@
   height: 100%;
 }
 
-/* The glow is drawn at low resolution in a few layered strokes; a light
-   blur on this layer only melts the pixel grid and the steps between those
-   strokes into one smooth falloff. The rim layer stays sharp. */
-.hero-silk__layer[data-silk-glow] {
+/* The glow is drawn at low resolution in a few layered strokes and blurred
+   inside the canvas. Only where canvas filters are missing (older Safari)
+   does the layer itself get the blur. The rim layer stays sharp. */
+.no-canvas-filter .hero-silk__layer[data-silk-glow] {
   filter: blur(10px);
 }
 
@@ -50,15 +39,13 @@
 }
 
 /* Spans the whole zone; the sticky child keeps one screen of silk in view.
-   The mask fades the silk out over the zone's last half-screen so it never
-   ends on a hard edge. */
+   The silk fades out over the zone's last part inside the canvases, so it
+   never ends on a hard edge. */
 .silk-zone__backdrop {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 60vh), transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 60vh), transparent 100%);
 }
 
 .silk-zone__sticky {
