@@ -3,9 +3,12 @@
 // a few larger ones carrying a soft glow. Brighter toward the bottom, where
 // the light is. One 2D canvas, no WebGL, no CSS filters or masks.
 //
-// The canvas is a screen-sized window onto the zone: the field scrolls with
-// the page (it repeats every screen) and fades out over the zone's last part.
-// Positions are a pure function of the clock, so nothing ever accumulates.
+// The field hangs behind the page like distant light: it drifts on its own
+// clock and is NOT redrawn on scroll (redrawing a full-screen canvas on every
+// scroll frame was the costliest thing on the page). Drawn at 1× — the dots
+// are soft glows, so higher resolution adds cost but nothing visible. It
+// fades out over the zone's last part. Positions are a pure function of the
+// clock, so nothing ever accumulates.
 //
 // Runs on gsap.ticker (capped at 30fps), and only while on screen, the tab is
 // visible and reduced motion is off. Otherwise a single static frame is
@@ -15,7 +18,6 @@ import { gsap } from './gsap'
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const FPS = 30
 const START_TIME = 8 // seconds in, so the first frame isn't a "rest" pose
-const MAX_DPR = 1.5
 const COUNT = { wide: 90, tall: 45 }
 const END_FADE = 0.6 // fades out over the zone's last this-many screens
 
@@ -74,13 +76,11 @@ export function mountParticles(canvas) {
   const sprite = makeSprite()
   let w = 0
   let h = 0
-  let dpr = 1
   let zoneH = 0
-  let offset = 0 // px of the zone scrolled above the canvas's top edge
+  let offset = 0 // px of the zone scrolled above the canvas's top edge (for the end fade)
   let particles = []
   let clock = START_TIME
   let acc = 0
-  let frame = 0
   let inView = true
   let running = false
 
@@ -88,16 +88,14 @@ export function mountParticles(canvas) {
     zone ? canvas.getBoundingClientRect().top - zone.getBoundingClientRect().top : 0
 
   function draw(t) {
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, w, h)
     // Near the zone's end the whole field fades, down to nothing at the end.
     const fadeLen = END_FADE * window.innerHeight
     const end = zoneH - offset // the zone's end, in canvas px
     for (const p of particles) {
       // Rise, wrapping from just below the bottom to just above the top; the
-      // fade at both ends hides the wrap. The field scrolls with the page.
-      const y = ((((p.y - p.rise * t - offset / h) % 1.1) + 1.1) % 1.1) - 0.05
+      // fade at both ends hides the wrap.
+      const y = ((((p.y - p.rise * t) % 1.1) + 1.1) % 1.1) - 0.05
       const x = p.x + p.sway * Math.sin(t * p.swayF + p.phase)
       const edge = Math.max(0, Math.min(1, (y + 0.05) / 0.12, (1.05 - y) / 0.12))
       const depth = 0.55 + 0.45 * y // brighter toward the bottom
@@ -116,9 +114,8 @@ export function mountParticles(canvas) {
     const r = canvas.getBoundingClientRect()
     w = Math.max(1, Math.round(r.width))
     h = Math.max(1, Math.round(r.height))
-    dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
-    canvas.width = Math.round(w * dpr)
-    canvas.height = Math.round(h * dpr)
+    canvas.width = w
+    canvas.height = h
     zoneH = zone ? zone.offsetHeight : h
     const count = w >= h ? COUNT.wide : COUNT.tall
     if (particles.length !== count) particles = makeParticles(count)
@@ -148,19 +145,6 @@ export function mountParticles(canvas) {
     }
   }
 
-  // Scrolling redraws at once, so the field moves in step with the content.
-  function onScroll() {
-    if (frame) return
-    frame = requestAnimationFrame(() => {
-      frame = 0
-      const next = readOffset()
-      if (next === offset) return
-      offset = next
-      draw(clock)
-    })
-  }
-
-  window.addEventListener('scroll', onScroll, { passive: true })
   const ro = new ResizeObserver(resize)
   ro.observe(canvas)
   if (zone) ro.observe(zone)
@@ -176,8 +160,6 @@ export function mountParticles(canvas) {
 
   return () => {
     gsap.ticker.remove(tick)
-    cancelAnimationFrame(frame)
-    window.removeEventListener('scroll', onScroll)
     ro.disconnect()
     io.disconnect()
     document.removeEventListener('visibilitychange', sync)

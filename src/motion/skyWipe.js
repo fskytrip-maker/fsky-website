@@ -10,7 +10,9 @@
 // Nothing animates on its own: a frame is drawn only when the scroll position
 // changes while the transition is near the screen.
 
-const MAX_DPR = 2
+// The scene is soft light and small dots, redrawn on every scroll frame:
+// plain resolution keeps that cheap with no visible loss.
+const MAX_DPR = 1
 // Progress ranges (0 → 1 while the stage is pinned).
 const COVERED = 0.47 // the sky has filled the screen
 // The chapter card: its characters surface one after another over CHARS,
@@ -64,16 +66,32 @@ function skyGradient(ctx, w, h) {
   return g
 }
 
-function softDot(ctx, x, y, r, alpha) {
-  const g = ctx.createRadialGradient(x, y, 0, x, y, r)
-  g.addColorStop(0, `rgba(255, 255, 255, ${alpha})`)
-  g.addColorStop(0.35, `rgba(235, 250, 255, ${alpha * 0.55})`)
-  g.addColorStop(1, 'rgba(200, 240, 255, 0)')
-  ctx.fillStyle = g
-  ctx.beginPath()
-  ctx.arc(x, y, r, 0, TAU)
-  ctx.fill()
+// Stamps drawn once and reused for every dot / orb (far cheaper than a path
+// or gradient per dot per frame).
+function makeSprite(stops) {
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const g = c.getContext('2d')
+  const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+  for (const [o, col] of stops) grd.addColorStop(o, col)
+  g.fillStyle = grd
+  g.fillRect(0, 0, 64, 64)
+  return c
 }
+// A small hard-edged white dot (its edge anti-aliased by the gradient)…
+const dotSprite = () =>
+  makeSprite([
+    [0, '#fff'],
+    [0.8, '#fff'],
+    [1, 'rgba(255, 255, 255, 0)'],
+  ])
+// …and a large soft orb.
+const orbSprite = () =>
+  makeSprite([
+    [0, 'rgba(255, 255, 255, 1)'],
+    [0.35, 'rgba(235, 250, 255, 0.55)'],
+    [1, 'rgba(200, 240, 255, 0)'],
+  ])
 
 /**
  * Streams, each a wavy band of dots with a few large soft orbs riding along.
@@ -109,7 +127,7 @@ function makeStreams() {
   })
 }
 
-function drawScene(ctx, p, w, h, streams) {
+function drawScene(ctx, p, w, h, streams, sprites) {
   const short = Math.min(w, h)
   const R = Math.hypot(w, h) / 2
   const cx = w / 2
@@ -162,22 +180,23 @@ function drawScene(ctx, p, w, h, streams) {
       return [x * w, y]
     }
     const flow = p * s.speed
-    ctx.fillStyle = '#fff'
     for (const d of s.dots) {
       const u = (d.u + flow) % 1
       const [x, y] = at(u, d.off)
       ctx.globalAlpha = d.alpha * shown * (0.6 + 0.4 * Math.sin(u * 40 + d.u * 9) ** 2)
-      ctx.beginPath()
-      ctx.arc(x, y, d.size, 0, TAU)
-      ctx.fill()
+      const r = d.size * 1.25 // the sprite's solid core is 80% of its radius
+      ctx.drawImage(sprites.dot, x - r, y - r, r * 2, r * 2)
     }
     ctx.globalAlpha = 1
     for (const o of s.orbs) {
       const u = (o.u + flow * 1.2) % 1
       const [x, y] = at(u, o.off)
-      softDot(ctx, x, y, o.size * short, 0.7 * shown)
+      const r = o.size * short
+      ctx.globalAlpha = 0.7 * shown
+      ctx.drawImage(sprites.orb, x - r, y - r, r * 2, r * 2)
     }
   }
+  ctx.globalAlpha = 1
   ctx.globalCompositeOperation = 'source-over'
 }
 
@@ -191,6 +210,7 @@ export function mountSkyWipe(wrapper) {
   const next = wrapper.nextElementSibling
   const content = next?.querySelector('.section > .container')
   const streams = makeStreams()
+  const sprites = { dot: dotSprite(), orb: orbSprite() }
   let w = 0
   let h = 0
   let dpr = 1
@@ -218,7 +238,7 @@ export function mountSkyWipe(wrapper) {
       })
       if (en) en.style.opacity = String(smooth(...EN, p))
     }
-    if (p > 0 && p < 1) drawScene(ctx, p, w, h, streams)
+    if (p > 0 && p < 1) drawScene(ctx, p, w, h, streams, sprites)
   }
 
   // Contact's content fades in once the chapter card has gone, and its own
