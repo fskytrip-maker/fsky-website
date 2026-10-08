@@ -39,6 +39,13 @@
   transform: scaleX(0);
 }
 
+/* Hero intro (initMotion): hidden until it plays in on load. */
+.js-motion [data-hero-bg],
+.js-motion [data-hero-step],
+.js-motion [data-hero-chars] .hero__char {
+  opacity: 0;
+}
+
 .js-motion [data-reveal='image'] {
   clip-path: inset(100% 0 0 0);
 }

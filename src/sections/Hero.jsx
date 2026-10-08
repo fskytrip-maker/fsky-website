@@ -1,64 +1,73 @@
-import fskyLockup from '../assets/fsky-lockup.webp'
-import Arrow from '../components/Arrow'
+import heroBg from '../assets/hero-bg.webp'
+import heroGlassAvif from '../assets/hero-glass.avif'
+import heroGlass from '../assets/hero-glass.webp'
+import RevealText from '../components/RevealText'
 import { hero } from '../data/site'
-import { scrollToId } from '../motion/lenis'
 import './Hero.css'
 
-// The wordmark is the supplied lockup artwork (src/assets/fsky-lockup.webp,
-// cropped tight to its visible glyph — see that file's history) — no text
-// headline is set in code, so it can never drift from that image.
-// The glowing silk folds behind it come from SilkZone (see App.jsx), which
-// carries them on behind About and Services too.
+// A dark stage with a lit, reflective floor (supplied image) fills the
+// background. Both images come from the supplied PNGs: the background as
+// lossless WebP (lossy formats turn its fine grain into blocky bands in the
+// dark), the mark as full-colour AVIF with a lossless WebP fallback. Copy on the left; the glass FSKY mark (a supplied render, used as-is —
+// src/assets/hero-glass.webp) fills the right and sits behind the copy on
+// small screens; the copy always stays in front of it. On load the copy plays
+// in step by step (data-hero-step = delay in seconds, see initMotion). The
+// silk folds behind come from SilkZone (see App.jsx), which carries them on
+// behind About and Services too.
 export default function Hero() {
-  const goTo = (event, id) => {
-    event.preventDefault()
-    window.history.replaceState(null, '', `#${id}`)
-    scrollToId(id)
-  }
-
   return (
     <section id="top" className="hero" aria-label="FSKY — Design Studio">
-      <div className="hero__stage">
-        <h1 className="hero__mark" data-reveal="fade">
+      <div className="hero__bg" aria-hidden="true">
+        <img data-hero-bg src={heroBg} alt="" width={1672} height={941} loading="eager" decoding="async" />
+      </div>
+
+      <div className="hero__visual">
+        <picture>
+          <source type="image/avif" srcSet={heroGlassAvif} />
           <img
-            src={fskyLockup}
-            alt={hero.logoAlt}
-            width={1950}
-            height={442}
+            src={heroGlass}
+            alt={hero.visualAlt}
+            width={1774}
+            height={887}
             loading="eager"
             fetchPriority="high"
             decoding="async"
           />
-        </h1>
-        <p className="hero__tagline" data-hero-tagline>
-          {hero.tagline}
-        </p>
+        </picture>
       </div>
 
-      <div className="hero__stage hero__bottom">
-        <div className="hero__info" data-reveal="fade">
-          <p className="hero__categories label">{hero.categories.join(' / ')}</p>
-          <p className="hero__scroll label muted">
-            <span className="hero__scroll-line" aria-hidden="true" />
-            {hero.scrollLabel}
-          </p>
-        </div>
+      <div className="hero__copy">
+        <p className="hero__index label" data-hero-step="0.2">
+          {hero.index}
+          <span className="hero__index-line" data-reveal="line" data-delay="0.35" aria-hidden="true" />
+        </p>
 
-        <div className="hero__ctas" data-reveal="fade">
-          <a
-            className="hero-cta hero-cta--solid arrow-host"
-            href={`#${hero.ctas.inquiry.targetId}`}
-            onClick={(e) => goTo(e, hero.ctas.inquiry.targetId)}
-          >
-            <span className="hero-cta__text">
-              <span className="hero-cta__label">{hero.ctas.inquiry.label}</span>
-              <span className="hero-cta__sub">{hero.ctas.inquiry.subLabel}</span>
+        <RevealText as="h1" className="hero__title display" text={hero.title.join('\n')} delay={0.35} />
+
+        {/* Each character surfaces out of a blur, one after another. */}
+        <p className="hero__lead" data-hero-chars data-delay="0.95">
+          <span className="sr-only">{hero.lead.join('')}</span>
+          {hero.lead.map((line) => (
+            <span key={line} className="hero__lead-line" aria-hidden="true">
+              {[...line].map((char, i) => (
+                <span key={i} className="hero__char">
+                  {char}
+                </span>
+              ))}
             </span>
-            <span className="hero-cta__icon" aria-hidden="true">
-              <Arrow className="hero-cta__arrow" />
-            </span>
-          </a>
-        </div>
+          ))}
+        </p>
+
+        <p className="hero__categories label" data-hero-step="1.75">
+          {hero.categories.join(' / ')}
+          <br />
+          {hero.motto}
+        </p>
+
+        <p className="hero__scroll label" data-hero-step="2">
+          <span className="hero__mouse" aria-hidden="true" />
+          {hero.scrollLabel}
+        </p>
       </div>
     </section>
   )

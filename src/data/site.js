@@ -25,19 +25,18 @@ export const headerNav = [
 export const headerContact = { id: 'contact', label: 'CONTACT' }
 
 export const hero = {
-  // The wordmark is the supplied lockup image (src/assets/fsky-lockup.webp) —
-  // no text headline is set here, so it can never drift from that artwork.
-  logoAlt: 'FSKY',
-  tagline: 'DESIGN STUDIO',
-  categories: ['WEB', 'BRAND', 'GRAPHIC'],
-  scrollLabel: 'SCROLL TO EXPLORE',
-  ctas: {
-    inquiry: { label: 'PROJECT INQUIRY', subLabel: '制作の相談', targetId: 'contact' },
-  },
+  index: '01',
+  title: ['A', 'CREATIVE', 'STUDIO'],
+  lead: ['想いを、かたちに。', '未来へつなぐデザインを。'],
+  categories: ['WEB', 'LOGO', 'BRAND', 'GRAPHIC'],
+  motto: "DESIGN FOR WHAT'S NEXT.",
+  scrollLabel: 'SCROLL',
+  // The glass FSKY mark (supplied render, used as-is).
+  visualAlt: 'FSKY',
 }
 
 export const about = {
-  index: '01',
+  index: '02',
   label: 'About',
   // Scroll-highlighted statement. Japanese brightens character by character;
   // text with spaces (English) brightens word by word. *…* = accent colour,
@@ -58,7 +57,7 @@ export const about = {
 }
 
 export const services = {
-  index: '02',
+  index: '03',
   label: 'Services',
   title: 'What we do',
   titleJa: 'できること', // shown small under the heading
@@ -68,7 +67,7 @@ export const services = {
 }
 
 export const contact = {
-  index: '03',
+  index: '04',
   label: 'Contact',
   title: "Let's\ntalk.",
   lead: 'ご相談・お見積りはこちらから。',

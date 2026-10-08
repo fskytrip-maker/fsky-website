@@ -23,13 +23,31 @@ export function initMotion(root) {
     (context) => {
       const { desktop } = context.conditions
 
-      q(root, '[data-hero-tagline]').forEach((el) => {
-        gsap.fromTo(el,
-          { opacity: 0, y: 14 },
+      // -- Hero intro: the background fades up and the copy plays in step by
+      // step (the title itself is a data-reveal="text" below). The glass
+      // mark itself stays still. -------------------------------------------
+      q(root, '[data-hero-bg]').forEach((el) => {
+        gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 1.6, ease: 'power2.out' })
+      })
+      q(root, '[data-hero-step]').forEach((el) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 1, delay: Number(el.dataset.heroStep), ease: 'power3.out' },
+        )
+      })
+      q(root, '[data-hero-chars]').forEach((el) => {
+        gsap.fromTo(
+          el.querySelectorAll('.hero__char'),
+          { opacity: 0, yPercent: 35, filter: 'blur(8px)' },
           {
-            opacity: 1, y: 0, duration: 1.15, delay: 0.25,
+            opacity: 1,
+            yPercent: 0,
+            filter: 'blur(0px)',
+            duration: 0.9,
+            stagger: 0.045,
+            delay: Number(el.dataset.delay || 0),
             ease: 'power3.out',
-            scrollTrigger: { trigger: el, start: 'top 96%', once: true },
           },
         )
       })

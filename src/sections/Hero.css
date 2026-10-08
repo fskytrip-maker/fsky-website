@@ -16,202 +16,215 @@
      belong to SilkZone, which runs on behind About and Services. */
 }
 
-.hero__stage {
-  position: relative;
-  z-index: 1;
-  width: min(88vw, 1760px);
-  margin-inline: auto;
+/* ---- Background: dark stage with a lit, reflective floor ---------------- */
+
+/* Covers the Hero (cropped from the middle, the floor kept at the bottom).
+   Two fades, intersected: it grows gradually more transparent toward the
+   left (behind the copy), and fades out at its foot into the dark of the
+   sections below. */
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.08) 0%, #000 62%),
+    linear-gradient(to bottom, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.08) 0%, #000 62%),
+    linear-gradient(to bottom, #000 78%, transparent 100%);
+  mask-composite: intersect;
 }
 
-/* The mark+tagline block (not .hero__bottom): an auto top margin here and
-   .hero__bottom's auto top margin below split the Hero's leftover height
-   evenly above and below this block, so it settles in the upper-middle
-   instead of sticking to the header with all the slack dumped underneath. */
-.hero__stage:not(.hero__bottom) {
-  margin-top: auto;
-}
-
-.hero__mark {
-  padding-top: clamp(16px, 2.4vw, 32px);
-}
-
-.hero__mark img {
+.hero__bg img {
   display: block;
   width: 100%;
-  height: auto;
-  /* Real alpha, cropped tight to the glyph — composites normally, no
-     backdrop/blend-mode trick needed; the silk layer shows through freely. */
-}
-
-.hero__tagline {
-  margin-top: clamp(12px, 1.5vw, 24px);
-  /* Right-aligned to the lockup's right edge (both share .hero__stage). */
-  text-align: right;
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: rgb(244 242 238 / 0.92);
-  font-size: clamp(24px, 5vw, 30px);
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 100%;
+  /* Tilted 5° to the left like the mark, so the mark sits square on the
+     floor; scaled just enough that the corners never show. */
+  transform: rotate(-5deg) scale(1.2);
 }
 
 @media (min-width: 1024px) {
-  .hero__tagline {
-    font-size: clamp(40px, 3vw, 56px);
+  .hero__bg img {
+    transform: rotate(-5deg) scale(1.17);
   }
 }
 
-.hero__bottom {
-  /* Auto, paired with .hero__stage's own auto top margin above: together
-     they absorb the Hero's leftover height evenly, keeping this row
-     anchored near the bottom instead of trailing extra empty space below
-     it (min-height:100svh no longer caps out on tall/short viewports). */
-  margin-top: auto;
-  padding-bottom: max(clamp(24px, 5vh, 56px), env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  gap: clamp(18px, 3vw, 28px);
+/* ---- The glass mark ------------------------------------------------------ */
+
+/* The supplied render has real alpha, so it sits straight on the page;
+   width-only sizing keeps its aspect ratio. A soft blue glow lifts it off
+   the near-black. */
+.hero__visual {
+  position: absolute;
+  z-index: 0;
+  top: calc(var(--header-h) + 6vh);
+  right: 7vw;
+  width: 86vw; /* the whole mark stays on screen */
+  pointer-events: none;
+  /* Tilted 5° to the left (rotation only — the artwork itself is untouched). */
+  transform: rotate(-5deg);
 }
 
-.hero__info {
+.hero__visual picture {
+  display: block;
+}
+
+.hero__visual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 48px rgb(40 120 255 / 0.35));
+}
+
+/* ---- Copy ---------------------------------------------------------------- */
+
+.hero__copy {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: flex-start;
+  width: min(88vw, 1760px);
+  margin: auto auto 0;
+  padding-bottom: max(clamp(28px, 5vh, 56px), env(safe-area-inset-bottom));
+  /* Lifts the type off the brightest parts of the glass behind it. */
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.55);
+}
+
+.hero__index {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: clamp(1rem, 0.88rem + 0.5vw, 1.375rem);
+  letter-spacing: 0.08em;
+}
+
+.hero__index-line {
+  display: block;
+  transform-origin: 0 50%;
+  width: clamp(40px, 4vw, 56px);
+  height: 1px;
+  background: currentColor;
+}
+
+.hero__title {
+  margin-top: clamp(20px, 3vh, 40px);
+  font-size: clamp(3.25rem, min(1rem + 7.2vw, 12.5vh), 8.5rem); /* fits short screens too */
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+}
+
+.hero__lead {
+  display: flex;
+  flex-direction: column;
+  margin-top: clamp(24px, 3.4vh, 44px);
+  font-family:
+    'Hiragino Mincho ProN', 'Hiragino Mincho Pro', 'Yu Mincho', YuMincho, 'Noto Serif JP',
+    serif;
+  font-size: clamp(1.25rem, min(0.85rem + 1.45vw, 3.6vh), 2.375rem);
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  line-height: 1.75;
+}
+
+.hero__lead-line {
+  display: block;
+}
+
+.hero__char {
+  display: inline-block;
 }
 
 .hero__categories {
-  color: var(--muted);
+  margin-top: clamp(22px, 3vh, 40px);
+  font-size: clamp(0.75rem, 0.66rem + 0.35vw, 1.0625rem);
+  letter-spacing: 0.2em;
+  line-height: 1.7;
 }
 
 .hero__scroll {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(18px, 2vw, 28px);
+  margin-top: clamp(28px, 5vh, 64px);
+  font-size: clamp(0.8125rem, 0.74rem + 0.3vw, 1rem);
+  letter-spacing: 0.2em;
 }
 
-.hero__scroll-line {
-  display: block;
-  width: 40px;
-  height: 1px;
-  background: currentColor;
-}
-
-.hero__ctas {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ---- CTA button: rounded capsule — text on the left, arrow in a round
-   badge on the right. -------------------------------------------------- */
-
-.hero-cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  width: 100%;
-  min-height: 68px;
-  padding: 10px 10px 10px 26px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur) var(--ease-out),
-    transform var(--dur) var(--ease-out);
-}
-
-.hero-cta__text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.hero-cta__label {
-  font-size: clamp(0.9375rem, 1.3vw, 1.0625rem);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.hero-cta__sub {
-  font-size: 0.75rem;
-  line-height: 1.3;
-  letter-spacing: 0.03em;
-}
-
-.hero-cta__icon {
+/* Mouse outline with a wheel dot that rolls down and fades, on a loop. */
+.hero__mouse {
+  position: relative;
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid transparent;
+  width: 26px;
+  height: 42px;
+  border: 1.5px solid currentColor;
+  border-radius: 13px;
+}
+
+.hero__mouse::after {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
   border-radius: 50%;
-  font-size: 1.25rem;
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+  background: currentColor;
+  content: '';
+  animation: hero-wheel 2s var(--ease-in-out) infinite;
 }
 
-.hero-cta__arrow {
-  font-size: 1.4rem;
-}
-
-/* Solid: cyan capsule with a dark badge and a soft cyan glow beneath. */
-.hero-cta--solid {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--c-void);
-  box-shadow: 0 10px 32px -14px rgb(var(--accent-rgb) / 0.7);
-}
-
-.hero-cta--solid .hero-cta__sub {
-  color: rgb(6 9 15 / 0.7);
-}
-
-.hero-cta--solid .hero-cta__icon {
-  background: var(--c-void);
-  color: var(--accent);
-}
-
-@media (hover: hover) {
-  .hero-cta:hover {
-    transform: translateY(-2px);
+@keyframes hero-wheel {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
   }
-
-  .hero-cta--solid:hover {
-    box-shadow: 0 14px 40px -12px rgb(var(--accent-rgb) / 0.85);
+  25% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 0;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__mouse::after {
+    animation: none;
+  }
+}
+
+/* ---- Wide screens: copy on the left, the mark filling the right --------- */
 
 @media (min-width: 1024px) {
-  .hero__bottom {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
+  /* Stood on the floor: its foot rests on the sharp band of the floor,
+     just before the foreground goes out of focus (tilted about that foot). */
+  .hero__visual {
+    top: auto;
+    bottom: 15%;
+    right: 5vw;
+    width: min(64vw, 142vh);
+    transform: rotate(-5deg);
+    transform-origin: 50% 100%;
   }
 
-  .hero__ctas {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 16px;
+  .hero__copy {
+    width: auto;
+    margin: auto auto auto clamp(48px, 4.6vw, 88px);
+    padding-bottom: 0;
   }
 
-  .hero-cta {
-    width: clamp(304px, 22vw, 360px);
-    min-height: 76px;
-    padding: 12px 12px 12px 28px;
-  }
-
-  .hero-cta__icon {
-    width: 52px;
-    height: 52px;
+  /* The scroll cue rides the bottom of the screen, like the reference. */
+  .hero__scroll {
+    margin-top: clamp(40px, 8vh, 96px);
   }
 }
