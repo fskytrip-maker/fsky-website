@@ -44,7 +44,15 @@ export default function Hero() {
           <span className="hero__index-line" data-reveal="line" data-delay="0.35" aria-hidden="true" />
         </p>
 
-        <RevealText as="h1" className="hero__title display" text={hero.title.join('\n')} delay={0.35} />
+        {/* Reads "FSKY — A Creative Studio": the page's main heading names the
+            business, while the visible type stays as designed. */}
+        <RevealText
+          as="h1"
+          className="hero__title display"
+          text={hero.title.join('\n')}
+          label={hero.heading}
+          delay={0.35}
+        />
 
         {/* Each character surfaces out of a blur, one after another. */}
         <p className="hero__lead" data-hero-chars data-delay="0.95">

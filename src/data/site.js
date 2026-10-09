@@ -27,6 +27,8 @@ export const headerContact = { id: 'contact', label: 'CONTACT' }
 export const hero = {
   index: '01',
   title: ['A', 'CREATIVE', 'STUDIO'],
+  // What the main heading reads as (screen readers, search engines).
+  heading: 'FSKY — A Creative Studio',
   lead: ['想いを、かたちに。', '未来へつなぐデザインを。'],
   categories: ['WEB', 'LOGO', 'BRAND', 'GRAPHIC'],
   motto: "DESIGN FOR WHAT'S NEXT.",

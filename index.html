@@ -31,6 +31,39 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="FSKY Design Studio" />
     <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Tells search engines this is the official site of the business FSKY
+         (and that these social accounts are its own), and the site's name. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://fsky.jp/#organization",
+            "name": "FSKY",
+            "alternateName": "FSKY Design Studio",
+            "url": "https://fsky.jp/",
+            "logo": "https://fsky.jp/icon-192.png",
+            "description": "ウェブデザイン、ロゴ・ブランドデザイン、グラフィック・名刺デザインを手がけるデザインスタジオ。",
+            "sameAs": [
+              "https://www.instagram.com/fsky_creative/",
+              "https://x.com/FSKY_Creative",
+              "https://www.tiktok.com/@fsky892"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://fsky.jp/#website",
+            "name": "FSKY",
+            "alternateName": "FSKY Design Studio",
+            "url": "https://fsky.jp/",
+            "inLanguage": "ja",
+            "publisher": { "@id": "https://fsky.jp/#organization" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
